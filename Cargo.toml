@@ -1,0 +1,13 @@
+[package]
+name = "stylesheet"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+log = "0.4"
+parcel_selectors = "0.24"
+cssparser = "0.29"
+notify = "5.0"

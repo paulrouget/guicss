@@ -1,0 +1,13 @@
+edition = "2021"
+tab_spaces = 2
+max_width = 160
+use_try_shorthand = true
+where_single_line = true
+wrap_comments = true
+match_block_trailing_comma = true
+binop_separator = "Back"
+reorder_imports = true
+force_multiline_blocks = true
+group_imports = "StdExternalCrate"
+imports_granularity = "Module"
+reorder_impl_items = true
