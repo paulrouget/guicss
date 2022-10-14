@@ -10,9 +10,15 @@ fn main() {
         println!("Got error: {:?}", e);
         return;
       },
-      Ok(e) => {
-        println!("Got parsing event: {:?}", e);
+      Ok(stylesheet::Event::Parsed(errors)) => {
+        println!("Event: Parsed");
+        for e in errors {
+          println!("CSS Error: {:?}", e);
+        }
       },
+      Ok(event) => {
+          println!("Event: {:?}", event);
+      }
     }
   }
 }
