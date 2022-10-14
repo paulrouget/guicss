@@ -30,7 +30,10 @@ check-udeps:
 check-cranky:
 	rustup run nightly cargo cranky -- -D warnings
 
-check: check-fmt check-udeps check-cranky
+check: test doc check-fmt check-udeps check-cranky
+
+test:
+	cargo test
 
 clean:
 	rm -rf target Cargo.lock

@@ -1,110 +1,136 @@
-mod parser;
+//! `GuiCss` is a CSS parser designed for Rust Desktop GUI.
+//!
+//! OS-specific and Dark-theme-specific CSS code is supported via dedicated
+//! mediaQueries:
+//! - `prefers-color-scheme:light/dark`
+//! - `os-version: macos/linux/windows`
+//!
+//! Rules and mediaQueries are invalidated when the file is modified by the
+//! user, or when the system wide theme changes (Dark mode).
+//!
+//! # CSS Example
+//! ```css
+//! @media (prefers-color-scheme: light) {
+//!   hbox {
+//!     --mycolor: black;
+//!   }
+//! }
+//!
+//! @media (prefers-color-scheme: dark) {
+//!   hbox {
+//!     --mycolor: white;
+//!   }
+//! }
+//!
+//! hbox {
+//!   color: var(--mycolor);
+//!   background-color: red !important;
+//! }
+//!
+//! scrollarea::scrollbar {
+//!   width: 12px;
+//! }
+//!
+//! @media (os-version: macos) {
+//!   hbox {
+//!     --toolbar-padding: 12px;
+//!   }
+//! }
+//! ```
+
+mod compute;
+mod elements;
 mod properties;
-mod selectors;
+mod themes;
+mod thread;
+mod watchers;
 
-use std::path::PathBuf;
-use std::sync::mpsc::{channel, Receiver, Sender};
+pub use elements::Element;
+pub use properties::ComputedProperties;
+pub use thread::{parse, parse_file, parse_string, Event, Rules};
 
-use log::debug;
-use notify::event::{DataChange, EventKind, ModifyKind};
-use notify::{RecursiveMode, Watcher};
-use properties::ComputedProperties;
+#[cfg(test)]
+mod tests {
+  use lightningcss::cssparser::RGBA;
 
-pub struct StyleSheet {
-  pub thread: Receiver<Event>,
-}
-
-enum WatcherEvent {
-  FileChanged,
-  Error(String),
-}
-
-#[derive(Debug)]
-pub enum Event {
-  FileChanged,
-  SystemColorChanged,
-  /// Vec of error messages
-  Parsed(Vec<String>),
-  WatchError(String),
-  ThreadError(String),
-  FSError(String),
-}
-
-impl StyleSheet {
-  pub fn compute_properties(&self, default_properties: ComputedProperties) -> ComputedProperties {
-    // FIXME
-    default_properties
-  }
-}
-
-fn send<T>(sender: &Sender<T>, event: T) {
-  if let Err(e) = sender.send(event) {
-    eprintln!("Sending message to thread failed: {}", e);
-  }
-}
-
-pub fn parse(path: PathBuf) -> StyleSheet {
-  let (to_main, from_css_thread) = channel();
-
-  std::thread::spawn(move || {
-    debug!("CSS thread spawned");
-
-    let (to_css_thread, from_watcher_thread) = channel();
-
-    let watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
-      match res {
-        Ok(e) => {
-          if matches!(e.kind, EventKind::Modify(ModifyKind::Data(DataChange::Content))) {
-            send(&to_css_thread, WatcherEvent::FileChanged);
-          }
-        },
-        Err(e) => {
-          send(&to_css_thread, WatcherEvent::Error(e.to_string()));
-        },
-      }
-    });
-
-    let mut watcher = match watcher {
-      Ok(w) => w,
-      Err(e) => {
-        send(&to_main, Event::WatchError(e.to_string()));
-        return;
-      },
-    };
-
-    if let Err(e) = watcher.watch(&path, RecursiveMode::NonRecursive) {
-      send(&to_main, Event::WatchError(e.to_string()));
-    }
-
-    let source = std::fs::read_to_string(&path);
-
-    match source {
-      Err(e) => {
-        send(&to_main, Event::FSError(e.to_string()));
-      },
-      Ok(s) => {
-        let parse_result = crate::parser::parse(&s);
-        // FIXME: Debug formatter
-        let errors: Vec<String> = parse_result.errors.iter().map(|e| format!("{:?}", e)).collect();
-        send(&to_main, Event::Parsed(errors));
-      },
-    }
-
-    loop {
-      let event = from_watcher_thread.recv();
-      match event {
-        Ok(WatcherEvent::FileChanged) => {
-          send(&to_main, Event::FileChanged);
-        },
-        Ok(WatcherEvent::Error(e)) => {
-          send(&to_main, Event::WatchError(e));
-        },
-        Err(e) => {
-          send(&to_main, Event::ThreadError(e.to_string()));
-        },
-      }
-    }
+  use crate::themes::{set_theme, Theme};
+  use crate::{parse, ComputedProperties, Element};
+  const RED: Option<RGBA> = Some(RGBA {
+    red: 255,
+    green: 0,
+    blue: 0,
+    alpha: 255,
+  });
+  const GREEN: Option<RGBA> = Some(RGBA {
+    red: 0,
+    green: 128,
+    blue: 0,
+    alpha: 255,
   });
 
-  StyleSheet { thread: from_css_thread }
+  #[test]
+  fn basic() {
+    let source = r#"
+    #foo {
+      background-color: red;
+    }
+    hbox {
+      color: green;
+    }
+    "#
+    .to_owned();
+
+    set_theme(Theme::Light);
+
+    let rules = parse(source, None).unwrap();
+
+    let elt = Element::named("hbox").id("foo");
+    assert_eq!(
+      rules.compute(&elt),
+      ComputedProperties {
+        background_color: RED,
+        color: GREEN,
+        ..ComputedProperties::default()
+      }
+    );
+
+    let elt = Element::named("hbox");
+    assert_eq!(
+      rules.compute(&elt),
+      ComputedProperties {
+        color: GREEN,
+        ..ComputedProperties::default()
+      }
+    );
+  }
+
+  #[test]
+  fn theme() {
+    let source = r#"
+    @media (prefers-color-scheme: light) {
+      hbox {
+        color: red;
+      }
+    }
+    @media (prefers-color-scheme: dark) {
+      hbox {
+        color: green;
+      }
+    }
+    "#
+    .to_owned();
+
+    set_theme(Theme::Dark);
+
+    let rules = parse(source, None).unwrap();
+
+    let elt = Element::named("hbox");
+    assert_eq!(
+      rules.compute(&elt),
+      ComputedProperties {
+        color: GREEN,
+        ..ComputedProperties::default()
+      }
+    );
+  }
 }
