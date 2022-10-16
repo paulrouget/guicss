@@ -2,8 +2,8 @@ use cssparser::{
   AtRuleParser, CowRcStr, DeclarationListParser, DeclarationParser, ParseError, Parser, ParserInput, ParserState, QualifiedRuleParser, RuleListParser,
   _cssparser_internal_to_lowercase, match_ignore_ascii_case, parse_important,
 };
-use parcel_selectors::parser::SelectorParseErrorKind;
 
+use parcel_selectors::parser::SelectorParseErrorKind;
 use crate::properties::{Importance, Property};
 use crate::selectors::{Selector, SelectorList};
 
@@ -32,7 +32,13 @@ pub(crate) struct Rule<'i> {
   properties: Vec<(Property, Importance)>,
 }
 
-impl<'i> Rule<'i> {}
+impl<'i> Rule<'i> {
+  // pub fn matches(&self, element: &E) -> bool where E: Element<'a> {
+  //   let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
+  //   matches_selector(&self.selector, 0, None, element, &mut context, &mut |_, _| {})
+  //   // todo!()
+  // }
+}
 
 pub(crate) fn parse(source: &str) -> WithErrors<'_, Vec<Rule<'_>>> {
   let mut parse_input = ParserInput::new(source);

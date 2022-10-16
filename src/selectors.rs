@@ -1,32 +1,25 @@
 use std::fmt;
 
+use crate::elements::{PseudoElement, PseudoClass};
+
 use cssparser::{CowRcStr, ParseError, Parser, SourceLocation, ToCss, _cssparser_internal_to_lowercase, match_ignore_ascii_case};
 use parcel_selectors::parser::{NestingRequirement, NonTSPseudoClass, PseudoElement as PseudoElementTrait, SelectorImpl, SelectorParseErrorKind};
 
 // FIXME: could this be just a CowRcStr, not wrapped into LocalName?
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct SelectorString<'a>(CowRcStr<'a>);
+pub struct SelectorStr<'a>(CowRcStr<'a>);
 
-impl<'a> From<CowRcStr<'a>> for SelectorString<'a> {
-  fn from(s: CowRcStr<'a>) -> SelectorString<'a> {
-    SelectorString(s.clone())
+impl<'a> From<CowRcStr<'a>> for SelectorStr<'a> {
+  fn from(s: CowRcStr<'a>) -> SelectorStr<'a> {
+    SelectorStr(s.clone())
   }
 }
 
-impl<'a> ToCss for SelectorString<'a> {
+impl<'a> ToCss for SelectorStr<'a> {
   fn to_css<W>(&self, dest: &mut W) -> fmt::Result
   where W: fmt::Write {
     dest.write_str(&self.0)
   }
-}
-
-#[derive(Clone, PartialEq, Eq)]
-pub enum PseudoClass {
-  Active,
-  Hover,
-  Focus,
-  Enabled,
-  Disabled,
 }
 
 impl ToCss for PseudoClass {
@@ -54,11 +47,6 @@ impl NonTSPseudoClass<'_> for PseudoClass {
   }
 }
 
-#[derive(Clone, PartialEq, Eq)]
-pub enum PseudoElement {
-  Scrollbar,
-}
-
 impl ToCss for PseudoElement {
   fn to_css<W>(&self, dest: &mut W) -> fmt::Result
   where W: fmt::Write {
@@ -74,19 +62,20 @@ impl PseudoElementTrait<'_> for PseudoElement {
 
 pub(crate) type SelectorList<'i> = parcel_selectors::SelectorList<'i, CustomParser>;
 pub(crate) type Selector<'i> = parcel_selectors::parser::Selector<'i, CustomParser>;
+// pub(crate) type Element<'i> = parcel_selectors::Element<'i, CustomParser>;
 
 impl<'i> SelectorImpl<'i> for CustomParser {
-  type AttrValue = SelectorString<'i>;
-  type BorrowedLocalName = SelectorString<'i>;
-  type BorrowedNamespaceUrl = SelectorString<'i>;
+  type AttrValue = SelectorStr<'i>;
+  type BorrowedLocalName = SelectorStr<'i>;
+  type BorrowedNamespaceUrl = SelectorStr<'i>;
   type ExtraMatchingData = ();
-  type Identifier = SelectorString<'i>;
-  type LocalName = SelectorString<'i>;
-  type NamespacePrefix = SelectorString<'i>;
-  type NamespaceUrl = SelectorString<'i>;
+  type Identifier = SelectorStr<'i>;
+  type LocalName = SelectorStr<'i>;
+  type NamespacePrefix = SelectorStr<'i>;
+  type NamespaceUrl = SelectorStr<'i>;
   type NonTSPseudoClass = PseudoClass;
   type PseudoElement = PseudoElement;
-  type VendorPrefix = SelectorString<'i>;
+  type VendorPrefix = SelectorStr<'i>;
 }
 
 #[derive(Clone, Debug)]

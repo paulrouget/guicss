@@ -16,4 +16,7 @@ pub(crate) enum Importance {
   NotImportant,
 }
 
-pub struct ComputedProperties {}
+#[derive(Debug)]
+pub struct ComputedProperties {
+  pub padding_top: f32,
+}

@@ -3,7 +3,33 @@ use parcel_selectors::attr::*;
 use parcel_selectors::matching::MatchingContext;
 use parcel_selectors::matching::ElementSelectorFlags;
 
+// FIXME: sad we have to use both NodeId and NodeRef
+
 use crate::selectors::SelectorStr;
+
+pub type Arena<'i> = indextree::Arena<Element<'i>>;
+pub use indextree::NodeId;
+
+type Node<'i> = indextree::Node<Element<'i>>;
+
+#[derive(Clone)]
+pub struct NodeRef<'i> {
+  id: NodeId,
+  arena: &'i Arena<'i>,
+}
+
+impl<'i> NodeRef<'i> {
+  fn new(id: indextree::NodeId, arena: &'i Arena) -> Self {
+    NodeRef { id, arena }
+  }
+  fn dupe(&self, id: indextree::NodeId) -> Self {
+    NodeRef { id, arena: self.arena }
+  }
+  fn node(&self) -> &Node {
+    self.arena.get(self.id).as_ref().unwrap()
+  }
+}
+
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PseudoClass {
@@ -19,51 +45,50 @@ pub enum PseudoElement {
   Scrollbar,
 }
 
-#[derive(Debug)]
-enum ElementType<'i> {
+#[derive(Debug, Default)]
+pub enum ElementName<'i> {
   Pseudo(PseudoElement),
-  Regular(&'i str),
+  Named(&'i str),
+  #[default]
+  Unnamed,
 }
 
-#[derive(Debug)]
-struct Element<'i> {
-  r#type: ElementType<'i>,
+#[derive(Debug, Default)]
+pub struct Element<'i> {
+  name: ElementName<'i>,
   id: Option<&'i str>,
   classes: Vec<&'i str>,
   pseudo_classes: Vec<PseudoClass>,
   attributes: Vec<(&'i str, &'i str)>,
 }
 
-type Node<'i> = indextree::Node<Element<'i>>;
-
-#[derive(Clone)]
-struct ElementRef<'i> {
-  id: indextree::NodeId,
-  arena: &'i indextree::Arena<Element<'i>>,
+impl<'i> Element<'i> {
+  pub fn new() -> Element<'i> {
+    Element::default()
+  }
+  pub fn name(mut self, name: &'i str) -> Element {
+    self.name = ElementName::Named(name);
+    self
+  }
+  pub fn id(mut self, id: &'i str) -> Element {
+    self.id = Some(id);
+    self
+  }
 }
 
-impl<'i> std::fmt::Debug for ElementRef<'i> {
+impl<'i> std::fmt::Debug for NodeRef<'i> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "ElementRef NodeId: {}", self.id)
+    write!(f, "NodeRef NodeId: {}", self.id)
   }
 }
 
-impl<'i> ElementRef<'i> {
-  fn new(&self, id: indextree::NodeId) -> Self {
-    ElementRef { id, arena: self.arena }
-  }
-  fn node(&self) -> &Node {
-    self.arena.get(self.id).as_ref().unwrap()
-  }
-}
-
-impl<'i> parcel_selectors::Element<'i> for ElementRef<'i> {
+impl<'i> parcel_selectors::Element<'i> for NodeRef<'i> {
   type Impl = crate::selectors::CustomParser;
   fn opaque(&self) -> OpaqueElement {
     OpaqueElement::new(&self)
   }
   fn parent_element(&self) -> Option<Self> {
-    self.node().parent().map(|id| self.new(id))
+    self.node().parent().map(|id| self.dupe(id))
   }
   fn parent_node_is_shadow_root(&self) -> bool {
     false
@@ -72,13 +97,13 @@ impl<'i> parcel_selectors::Element<'i> for ElementRef<'i> {
     None
   }
   fn is_pseudo_element(&self) -> bool {
-    matches!(self.node().get().r#type, ElementType::Pseudo(_))
+    matches!(self.node().get().name, ElementName::Pseudo(_))
   }
   fn prev_sibling_element(&self) -> Option<Self> {
-    self.node().previous_sibling().map(|id| self.new(id))
+    self.node().previous_sibling().map(|id| self.dupe(id))
   }
   fn next_sibling_element(&self) -> Option<Self> {
-    self.node().next_sibling().map(|id| self.new(id))
+    self.node().next_sibling().map(|id| self.dupe(id))
   }
   fn is_html_element_in_html_document(&self) -> bool {
     false
