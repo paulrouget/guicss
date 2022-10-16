@@ -5,7 +5,7 @@ use cssparser::{
 use parcel_selectors::parser::SelectorParseErrorKind;
 
 use crate::properties::{Importance, Property};
-use crate::selectors::SelectorList;
+use crate::selectors::{Selector, SelectorList};
 
 struct CustomParser;
 struct CustomDecParser;
@@ -27,7 +27,12 @@ pub(crate) struct WithErrors<'i, T> {
   pub(crate) errors: Vec<ParseError<'i, CustomError<'i>>>,
 }
 
-type Rule<'i> = (SelectorList<'i>, Vec<(Property, Importance)>);
+pub(crate) struct Rule<'i> {
+  selector: Selector<'i>,
+  properties: Vec<(Property, Importance)>,
+}
+
+impl<'i> Rule<'i> {}
 
 pub(crate) fn parse(source: &str) -> WithErrors<'_, Vec<Rule<'_>>> {
   let mut parse_input = ParserInput::new(source);
@@ -43,17 +48,20 @@ pub(crate) fn parse(source: &str) -> WithErrors<'_, Vec<Rule<'_>>> {
       },
       Ok(mut res) => {
         errors.append(&mut res.errors);
-        rules.push(res.inner);
+        rules.append(&mut res.inner);
       },
     }
   });
+
+  rules.sort_by(|a, b| a.selector.specificity().cmp(&b.selector.specificity()));
+
   WithErrors { inner: rules, errors }
 }
 
 impl<'i> QualifiedRuleParser<'i> for CustomParser {
   type Error = CustomError<'i>;
   type Prelude = SelectorList<'i>;
-  type QualifiedRule = WithErrors<'i, Rule<'i>>;
+  type QualifiedRule = WithErrors<'i, Vec<Rule<'i>>>;
 
   fn parse_prelude<'t>(&mut self, input: &mut Parser<'i, 't>) -> Result<Self::Prelude, ParseError<'i, Self::Error>> {
     crate::selectors::parse(input).map_err(|e| e.into())
@@ -77,10 +85,17 @@ impl<'i> QualifiedRuleParser<'i> for CustomParser {
         },
       }
     }
-    Ok(WithErrors {
-      inner: (prelude, decs),
-      errors,
-    })
+    let rules = prelude
+      .0
+      .into_iter()
+      .map(|s| {
+        Rule {
+          selector: s,
+          properties: decs.clone(),
+        }
+      })
+      .collect();
+    Ok(WithErrors { inner: rules, errors })
   }
 }
 
@@ -115,7 +130,7 @@ impl<'i> DeclarationParser<'i> for CustomDecParser {
 // Unsupported: FIXME support dark/light
 
 impl<'i> AtRuleParser<'i> for CustomParser {
-  type AtRule = WithErrors<'i, Rule<'i>>;
+  type AtRule = WithErrors<'i, Vec<Rule<'i>>>;
   type Error = CustomError<'i>;
   type Prelude = ();
 }

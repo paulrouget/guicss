@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) enum Property {
   PaddingTop(f32),
   PaddingBottom(f32),
@@ -10,7 +10,7 @@ pub(crate) enum Property {
   MarginBottom(f32),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) enum Importance {
   Important,
   NotImportant,

@@ -17,8 +17,8 @@ fn main() {
         }
       },
       Ok(event) => {
-          println!("Event: {:?}", event);
-      }
+        println!("Event: {:?}", event);
+      },
     }
   }
 }
