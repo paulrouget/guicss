@@ -13,7 +13,7 @@ pub use indextree::NodeId;
 type Node<'i> = indextree::Node<Element<'i>>;
 
 #[derive(Clone)]
-pub struct NodeRef<'i> {
+struct NodeRef<'i> {
   id: NodeId,
   arena: &'i Arena<'i>,
 }
