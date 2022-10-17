@@ -32,7 +32,7 @@ impl ComputedProperties {
     for prop in props.into_iter() {
       match prop {
         Property::PaddingTop(x) => self.padding_top = *x,
-        _ => { /* FIXME */ }
+        _ => { /* FIXME */ },
       }
     }
   }

@@ -1,7 +1,6 @@
-use bgcss::{Event, Element};
+use bgcss::{Element, Event};
 
 fn main() {
-
   let path = std::path::PathBuf::from("./examples/basic.css");
 
   let parser = bgcss::parse(path);
@@ -23,7 +22,6 @@ fn main() {
         return;
       },
       Ok(Event::Parsed(rules, errors)) => {
-
         for error in errors {
           println!("css error: {}", error);
         }

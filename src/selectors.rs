@@ -1,9 +1,9 @@
 use std::fmt;
 
-use crate::elements::{PseudoElement, PseudoClass};
-
 use cssparser::{CowRcStr, ParseError, Parser, SourceLocation, ToCss, _cssparser_internal_to_lowercase, match_ignore_ascii_case};
 use selectors::parser::{NonTSPseudoClass, PseudoElement as PseudoElementTrait, SelectorImpl, SelectorParseErrorKind};
+
+use crate::elements::{PseudoClass, PseudoElement};
 
 // FIXME: could this be just a CowRcStr, not wrapped into LocalName?
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

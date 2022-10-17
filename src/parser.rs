@@ -2,13 +2,13 @@ use cssparser::{
   AtRuleParser, CowRcStr, DeclarationListParser, DeclarationParser, ParseError, Parser, ParserInput, ParserState, QualifiedRuleParser, RuleListParser,
   _cssparser_internal_to_lowercase, match_ignore_ascii_case, parse_important,
 };
-
-use selectors::parser::SelectorParseErrorKind;
-use selectors::matching::{matches_selector, MatchingMode, MatchingContext};
 use selectors::context::QuirksMode;
-use crate::properties::{Importance, ComputedProperties, Property};
-use crate::selectors::{Selector, SelectorList};
+use selectors::matching::{matches_selector, MatchingContext, MatchingMode};
+use selectors::parser::SelectorParseErrorKind;
+
 use crate::elements::Element;
+use crate::properties::{ComputedProperties, Importance, Property};
+use crate::selectors::{Selector, SelectorList};
 
 struct CustomParser;
 struct CustomDecParser;
@@ -47,9 +47,7 @@ impl Rules {
     for rule in self.0.iter() {
       let matches = matches_selector(&rule.selector, 0, None, &element, &mut context, &mut |_, _| {});
       if matches {
-        let importants = rule.properties.iter().filter(|(_, i)| {
-          i.is_important()
-        }).map(|(p, _)| p);
+        let importants = rule.properties.iter().filter(|(_, i)| i.is_important()).map(|(p, _)| p);
         delayed.extend(importants);
         let props = rule.properties.iter().map(|(p, _)| p);
         computed.import(props);
