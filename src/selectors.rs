@@ -17,7 +17,7 @@ impl AsRef<str> for SelectorString {
 
 impl From<&str> for SelectorString {
   fn from(s: &str) -> SelectorString {
-    SelectorString(s.to_string())
+    SelectorString(s.to_owned())
   }
 }
 
