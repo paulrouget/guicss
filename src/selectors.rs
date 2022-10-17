@@ -60,7 +60,6 @@ impl PseudoElementTrait<'_> for PseudoElement {
 
 pub(crate) type SelectorList<'i> = parcel_selectors::SelectorList<'i, CustomParser>;
 pub(crate) type Selector<'i> = parcel_selectors::parser::Selector<'i, CustomParser>;
-// pub(crate) type Element<'i> = parcel_selectors::Element<'i, CustomParser>;
 
 impl<'i> SelectorImpl<'i> for CustomParser {
   type AttrValue = SelectorStr<'i>;
