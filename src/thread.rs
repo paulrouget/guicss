@@ -4,6 +4,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use log::debug;
 use notify::event::{DataChange, EventKind, ModifyKind};
 use notify::{RecursiveMode, Watcher};
+
 use crate::parser::{ErrorFormatter, Rules};
 
 #[derive(Debug)]
