@@ -7,12 +7,12 @@ fn main() {
   let parser = bgcss::parse(path);
 
   let root = Element::named("foo");
-  let hbox = Element::named("hbox");
-  let vbox = Element::named("vbox");
-  let n11 = Element::named("node").id("n11");
-  let n12 = Element::named("node").id("n12");
-  let n13 = Element::unamed();
-  let scrollbar = Element::scrollbar();
+  // let hbox = Element::named("hbox");
+  // let vbox = Element::named("vbox");
+  // let n11 = Element::named("node").id("n11");
+  // let n12 = Element::named("node").id("n12");
+  // let n13 = Element::unamed();
+  // let scrollbar = Element::scrollbar();
 
   loop {
     println!("Waiting parsing event");
@@ -28,7 +28,7 @@ fn main() {
           println!("css error: {}", error);
         }
 
-        rules.foobar(&root);
+        rules.compute(&root);
 
         println!("Event: Parsed");
       },

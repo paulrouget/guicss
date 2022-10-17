@@ -6,7 +6,7 @@ use cssparser::{
 use selectors::parser::SelectorParseErrorKind;
 use selectors::matching::{matches_selector, MatchingMode, MatchingContext};
 use selectors::context::QuirksMode;
-use crate::properties::{Importance, Property};
+use crate::properties::{Importance, ComputedProperties, Property};
 use crate::selectors::{Selector, SelectorList};
 use crate::elements::Element;
 
@@ -40,12 +40,23 @@ pub struct Rule {
 pub struct Rules(Vec<Rule>);
 
 impl Rules {
-  pub fn foobar<'a>(&self, element: &Element) {
+  pub fn compute(&self, element: &Element) -> ComputedProperties {
     let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
+    let mut computed = ComputedProperties::default();
+    let mut delayed: Vec<&Property> = Vec::new();
     for rule in self.0.iter() {
-      let res = matches_selector(&rule.selector, 0, None, &element, &mut context, &mut |_, _| {});
-      println!("{} == {:?} -> {}", element, rule.selector, res);
+      let matches = matches_selector(&rule.selector, 0, None, &element, &mut context, &mut |_, _| {});
+      if matches {
+        let importants = rule.properties.iter().filter(|(_, i)| {
+          i.is_important()
+        }).map(|(p, _)| p);
+        delayed.extend(importants);
+        let props = rule.properties.iter().map(|(p, _)| p);
+        computed.import(props);
+      }
     }
+    computed.import(delayed);
+    computed
   }
 }
 

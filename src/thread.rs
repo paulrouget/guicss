@@ -74,15 +74,7 @@ pub fn parse(path: PathBuf) -> BgParser {
       },
       Ok(source) => {
         let parsed = crate::parser::parse(&source);
-
         let errors = parsed.errors.iter().map(|e| format!("{:?}", e)).collect();
-
-        // let elt = Element::named("foo").id("bar");
-
-        // for rule in rules {
-        //   rule.matches(&elt);
-        // }
-
         send(&to_main, Event::Parsed(parsed.rules, errors));
       },
     }

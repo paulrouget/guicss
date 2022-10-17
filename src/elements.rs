@@ -159,9 +159,9 @@ impl<'element> selectors::Element for &'element Element {
 
   fn attr_matches(
     &self,
-    ns: &NamespaceConstraint<&SelectorString>,
-    local_name: &SelectorString,
-    operation: &AttrSelectorOperation<&SelectorString>
+    _: &NamespaceConstraint<&SelectorString>,
+    _local_name: &SelectorString,
+    _operation: &AttrSelectorOperation<&SelectorString>
     ) -> bool {
     // FIXME
     false
@@ -171,8 +171,8 @@ impl<'element> selectors::Element for &'element Element {
   fn match_non_ts_pseudo_class<F>(
     &self,
     pc: &PseudoClass,
-    context: &mut MatchingContext<'_, Self::Impl>,
-    flags_setter: &mut F
+    _context: &mut MatchingContext<'_, Self::Impl>,
+    _flags_setter: &mut F
     ) -> bool
     where
       F: FnMut(&Self, ElementSelectorFlags) {
@@ -181,7 +181,7 @@ impl<'element> selectors::Element for &'element Element {
   fn match_pseudo_element(
     &self,
     pe: &PseudoElement,
-    context: &mut MatchingContext<'_, Self::Impl>
+    _context: &mut MatchingContext<'_, Self::Impl>
     ) -> bool {
     if let ElementName::Pseudo(elt) = &self.name {
       elt == pe
@@ -203,10 +203,10 @@ impl<'element> selectors::Element for &'element Element {
     // Not quirks mode. Always case sensitivie
     self.classes.contains(name.as_ref())
   }
-  fn imported_part( &self, name: &SelectorString) -> Option<SelectorString> {
+  fn imported_part( &self, _name: &SelectorString) -> Option<SelectorString> {
     None
   }
-  fn is_part(&self, name: &SelectorString) -> bool {
+  fn is_part(&self, _name: &SelectorString) -> bool {
     false
   }
   fn is_empty(&self) -> bool {

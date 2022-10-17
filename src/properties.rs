@@ -16,7 +16,24 @@ pub(crate) enum Importance {
   NotImportant,
 }
 
-#[derive(Debug)]
+impl Importance {
+  pub fn is_important(&self) -> bool {
+    matches!(self, Importance::Important)
+  }
+}
+
+#[derive(Debug, Default)]
 pub struct ComputedProperties {
   pub padding_top: f32,
+}
+
+impl ComputedProperties {
+  pub(crate) fn import<'i, T: IntoIterator<Item = &'i Property>>(&mut self, props: T) {
+    for prop in props.into_iter() {
+      match prop {
+        Property::PaddingTop(x) => self.padding_top = *x,
+        _ => { /* FIXME */ }
+      }
+    }
+  }
 }
