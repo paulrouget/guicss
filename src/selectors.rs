@@ -9,7 +9,7 @@ use crate::elements::{PseudoClass, PseudoElement};
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SelectorString(String);
 
-impl<'a> AsRef<str> for SelectorString {
+impl AsRef<str> for SelectorString {
   fn as_ref(&self) -> &str {
     self.0.as_ref()
   }
@@ -61,7 +61,7 @@ impl PseudoElementTrait for PseudoElement {
 pub(crate) type SelectorList = selectors::SelectorList<CustomParser>;
 pub(crate) type Selector = selectors::parser::Selector<CustomParser>;
 
-impl<'i> SelectorImpl for CustomParser {
+impl SelectorImpl for CustomParser {
   type AttrValue = SelectorString;
   type BorrowedLocalName = SelectorString;
   type BorrowedNamespaceUrl = SelectorString;

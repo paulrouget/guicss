@@ -44,7 +44,7 @@ impl Rules {
     let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
     let mut computed = ComputedProperties::default();
     let mut delayed: Vec<&Property> = Vec::new();
-    for rule in self.0.iter() {
+    for rule in &self.0 {
       let matches = matches_selector(&rule.selector, 0, None, &element, &mut context, &mut |_, _| {});
       if matches {
         let importants = rule.properties.iter().filter(|(_, i)| i.is_important()).map(|(p, _)| p);
@@ -58,7 +58,7 @@ impl Rules {
   }
 }
 
-pub(crate) fn parse<'src>(source: &'src str) -> ParseResult<'src> {
+pub(crate) fn parse<'src>(source: &'src str) -> ParseResult<'_> {
   let mut parse_input = ParserInput::new(source);
   let mut parser = Parser::new(&mut parse_input);
 

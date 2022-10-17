@@ -29,7 +29,7 @@ pub struct ComputedProperties {
 
 impl ComputedProperties {
   pub(crate) fn import<'i, T: IntoIterator<Item = &'i Property>>(&mut self, props: T) {
-    for prop in props.into_iter() {
+    for prop in props {
       match prop {
         Property::PaddingTop(x) => self.padding_top = *x,
         _ => { /* FIXME */ },

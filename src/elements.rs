@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use selectors::attr::*;
+use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use selectors::matching::{ElementSelectorFlags, MatchingContext};
 use selectors::OpaqueElement;
 
@@ -208,7 +208,7 @@ impl<'element> selectors::Element for &'element Element {
 
   fn has_id(&self, id: &SelectorString, _: CaseSensitivity) -> bool {
     // Not quirks mode. Always case sensitivie
-    self.id.as_ref().map(|i| i == id.as_ref()).unwrap_or(false)
+    self.id.as_ref().map_or(false, |i| i == id.as_ref())
   }
 
   fn has_class(&self, name: &SelectorString, _: CaseSensitivity) -> bool {
