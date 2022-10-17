@@ -5,16 +5,14 @@ use log::debug;
 use notify::event::{DataChange, EventKind, ModifyKind};
 use notify::{RecursiveMode, Watcher};
 
-use crate::elements::Element;
-use crate::parser::Rule;
-use crate::properties::ComputedProperties;
+use crate::parser::Rules;
 
 #[derive(Debug)]
 pub enum Event {
   FileChanged,
   SystemColorChanged,
   /// Vec of error messages
-  Parsed,
+  Parsed(Rules, Vec<String>),
   WatchError(String),
   ThreadError(String),
   FSError(String),
@@ -25,16 +23,8 @@ enum WatcherEvent {
   Error(String),
 }
 
-pub struct StyleSheet {
+pub struct BgParser {
   pub thread: Receiver<Event>,
-}
-
-impl StyleSheet {
-  pub fn compute(&self, elt: &Element) -> ComputedProperties {
-    ComputedProperties {
-      padding_top: 0.0,
-    }
-  }
 }
 
 fn send<T>(sender: &Sender<T>, event: T) {
@@ -43,7 +33,7 @@ fn send<T>(sender: &Sender<T>, event: T) {
   }
 }
 
-pub fn parse(path: PathBuf) -> StyleSheet {
+pub fn parse(path: PathBuf) -> BgParser {
   let (to_main, from_css_thread) = channel();
 
   std::thread::spawn(move || {
@@ -83,15 +73,17 @@ pub fn parse(path: PathBuf) -> StyleSheet {
         send(&to_main, Event::FSError(e.to_string()));
       },
       Ok(source) => {
-        let rules = crate::parser::parse(&source).rules;
+        let parsed = crate::parser::parse(&source);
 
-        let elt = Element::named("foo").id("bar");
+        let errors = parsed.errors.iter().map(|e| format!("{:?}", e)).collect();
 
-        for rule in rules {
-          rule.matches(&elt);
-        }
+        // let elt = Element::named("foo").id("bar");
 
-        send(&to_main, Event::Parsed);
+        // for rule in rules {
+        //   rule.matches(&elt);
+        // }
+
+        send(&to_main, Event::Parsed(parsed.rules, errors));
       },
     }
 
@@ -111,5 +103,5 @@ pub fn parse(path: PathBuf) -> StyleSheet {
     }
   });
 
-  StyleSheet { thread: from_css_thread }
+  BgParser { thread: from_css_thread }
 }

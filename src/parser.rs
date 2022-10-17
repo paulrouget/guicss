@@ -26,21 +26,26 @@ impl<'src> From<SelectorParseErrorKind<'src>> for CustomError<'src> {
 }
 
 pub(crate) struct ParseResult<'src> {
-  pub(crate) rules: Vec<Rule>,
+  pub(crate) rules: Rules,
   pub(crate) errors: Vec<ParseError<'src, CustomError<'src>>>,
 }
 
-pub(crate) struct Rule {
+#[derive(Debug)]
+pub struct Rule {
   selector: Selector,
   properties: Vec<(Property, Importance)>,
 }
 
-impl<'src> Rule {
-  pub fn matches<'a>(&self, element: &Element) -> bool {
+#[derive(Debug)]
+pub struct Rules(Vec<Rule>);
+
+impl Rules {
+  pub fn foobar<'a>(&self, element: &Element) {
     let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
-    let res = matches_selector(&self.selector, 0, None, &element, &mut context, &mut |_, _| {});
-    println!("{} == {:?} -> {}", element, self.selector, res);
-    res
+    for rule in self.0.iter() {
+      let res = matches_selector(&rule.selector, 0, None, &element, &mut context, &mut |_, _| {});
+      println!("{} == {:?} -> {}", element, rule.selector, res);
+    }
   }
 }
 
@@ -58,14 +63,14 @@ pub(crate) fn parse<'src>(source: &'src str) -> ParseResult<'src> {
       },
       Ok(mut res) => {
         errors.append(&mut res.errors);
-        rules.append(&mut res.rules);
+        rules.append(&mut res.rules.0);
       },
     }
   });
 
   rules.sort_by(|a, b| a.selector.specificity().cmp(&b.selector.specificity()));
 
-  ParseResult { rules, errors }
+  ParseResult { rules: Rules(rules), errors }
 }
 
 impl<'src> QualifiedRuleParser<'src> for CustomParser {
@@ -105,7 +110,7 @@ impl<'src> QualifiedRuleParser<'src> for CustomParser {
         }
       })
       .collect();
-    Ok(ParseResult { rules, errors })
+    Ok(ParseResult { rules: Rules(rules), errors })
   }
 }
 

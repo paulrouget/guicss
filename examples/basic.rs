@@ -1,9 +1,10 @@
-use stylesheet::Element;
+use bgcss::{Event, Element};
 
 fn main() {
 
   let path = std::path::PathBuf::from("./examples/basic.css");
-  let sheet = stylesheet::parse(path);
+
+  let parser = bgcss::parse(path);
 
   let root = Element::named("foo");
   let hbox = Element::named("hbox");
@@ -13,17 +14,22 @@ fn main() {
   let n13 = Element::unamed();
   let scrollbar = Element::scrollbar();
 
-  sheet.compute(&root);
-
   loop {
     println!("Waiting parsing event");
-    let event = sheet.thread.recv();
+    let event = parser.thread.recv();
     match event {
       Err(e) => {
         println!("Got error: {:?}", e);
         return;
       },
-      Ok(stylesheet::Event::Parsed) => {
+      Ok(Event::Parsed(rules, errors)) => {
+
+        for error in errors {
+          println!("css error: {}", error);
+        }
+
+        rules.foobar(&root);
+
         println!("Event: Parsed");
       },
       Ok(event) => {
