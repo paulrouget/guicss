@@ -58,7 +58,7 @@ impl Rules {
   }
 }
 
-pub(crate) fn parse<'src>(source: &'_ str) -> ParseResult<'_> {
+pub(crate) fn parse(source: &'_ str) -> ParseResult<'_> {
   let mut parse_input = ParserInput::new(source);
   let mut parser = Parser::new(&mut parse_input);
 
