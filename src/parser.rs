@@ -4,8 +4,11 @@ use cssparser::{
 };
 
 use parcel_selectors::parser::SelectorParseErrorKind;
+use parcel_selectors::matching::{matches_selector, MatchingMode, MatchingContext};
+use parcel_selectors::context::QuirksMode;
 use crate::properties::{Importance, Property};
 use crate::selectors::{Selector, SelectorList};
+use crate::elements::Element;
 
 struct CustomParser;
 struct CustomDecParser;
@@ -35,11 +38,12 @@ pub(crate) struct Rule<'src> {
 }
 
 impl<'src> Rule<'src> {
-  // pub fn matches(&self, element: &E) -> bool where E: Element<'a> {
-  //   let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
-  //   matches_selector(&self.selector, 0, None, element, &mut context, &mut |_, _| {})
-  //   // todo!()
-  // }
+  pub fn matches<'a>(&self, element: &Element) -> bool {
+    let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
+    let res = matches_selector(&self.selector, 0, None, &element, &mut context, &mut |_, _| {});
+    println!("{} == {:?} -> {}", element, self.selector, res);
+    res
+  }
 }
 
 pub(crate) fn parse<'src>(source: &'src str) -> ParseResult<'src> {

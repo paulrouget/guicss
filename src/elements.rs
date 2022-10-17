@@ -55,7 +55,7 @@ impl std::fmt::Display for ElementName {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       ElementName::Pseudo(e) => e.fmt(f),
-      ElementName::Named(s) => f.write_str(s),
+      ElementName::Named(s) => s.fmt(f),
       ElementName::Unnamed => Ok(()),
     }
   }

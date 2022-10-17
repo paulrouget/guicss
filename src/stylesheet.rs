@@ -85,6 +85,12 @@ pub fn parse(path: PathBuf) -> StyleSheet {
       Ok(source) => {
         let rules = crate::parser::parse(&source).rules;
 
+        let elt = Element::named("foo").id("bar");
+
+        for rule in rules {
+          rule.matches(&elt);
+        }
+
         send(&to_main, Event::Parsed);
       },
     }
