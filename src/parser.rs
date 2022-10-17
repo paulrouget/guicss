@@ -28,7 +28,7 @@ impl<'src> From<SelectorParseErrorKind<'src>> for CustomError<'src> {
 pub(crate) struct ErrorFormatter<'a, 'b, 'c>(pub &'a ParseError<'b, CustomError<'c>>);
 
 impl std::fmt::Display for ErrorFormatter<'_, '_, '_> {
-  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     use cssparser::{BasicParseErrorKind, ParseErrorKind, ToCss};
     use selectors::parser::SelectorParseErrorKind as SPEK;
 
