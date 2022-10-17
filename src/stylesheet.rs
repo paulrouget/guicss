@@ -5,7 +5,8 @@ use log::debug;
 use notify::event::{DataChange, EventKind, ModifyKind};
 use notify::{RecursiveMode, Watcher};
 
-use crate::elements::{Arena, NodeId};
+use crate::elements::Element;
+use crate::parser::Rule;
 use crate::properties::ComputedProperties;
 
 #[derive(Debug)]
@@ -13,7 +14,7 @@ pub enum Event {
   FileChanged,
   SystemColorChanged,
   /// Vec of error messages
-  Parsed(Vec<String>),
+  Parsed,
   WatchError(String),
   ThreadError(String),
   FSError(String),
@@ -29,7 +30,7 @@ pub struct StyleSheet {
 }
 
 impl StyleSheet {
-  pub fn compute(&self, arena: &Arena, id: NodeId) -> ComputedProperties {
+  pub fn compute(&self, elt: &Element) -> ComputedProperties {
     ComputedProperties {
       padding_top: 0.0,
     }
@@ -81,11 +82,10 @@ pub fn parse(path: PathBuf) -> StyleSheet {
       Err(e) => {
         send(&to_main, Event::FSError(e.to_string()));
       },
-      Ok(s) => {
-        let parse_result = crate::parser::parse(&s);
-        // FIXME: Debug formatter
-        let errors: Vec<String> = parse_result.errors.iter().map(|e| format!("{:?}", e)).collect();
-        send(&to_main, Event::Parsed(errors));
+      Ok(source) => {
+        let rules = crate::parser::parse(&source).rules;
+
+        send(&to_main, Event::Parsed);
       },
     }
 

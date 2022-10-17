@@ -11,28 +11,30 @@ struct CustomParser;
 struct CustomDecParser;
 
 #[derive(Debug)]
-pub(crate) enum CustomError<'i> {
-  UnknownProperty(CowRcStr<'i>),
-  SelectorError(SelectorParseErrorKind<'i>),
+pub(crate) enum CustomError<'src> {
+  UnknownProperty(CowRcStr<'src>),
+  SelectorError(SelectorParseErrorKind<'src>),
 }
 
-impl<'i> From<SelectorParseErrorKind<'i>> for CustomError<'i> {
-  fn from(e: SelectorParseErrorKind<'i>) -> CustomError<'i> {
+impl<'src> From<SelectorParseErrorKind<'src>> for CustomError<'src> {
+  fn from(e: SelectorParseErrorKind<'src>) -> CustomError<'src> {
     CustomError::SelectorError(e)
   }
 }
 
-pub(crate) struct WithErrors<'i, T> {
-  pub(crate) inner: T,
-  pub(crate) errors: Vec<ParseError<'i, CustomError<'i>>>,
+type Errors<'src> = Vec<ParseError<'src, CustomError<'src>>>;
+
+pub(crate) struct ParseResult<'src> {
+  pub(crate) rules: Vec<Rule<'src>>,
+  pub(crate) errors: Errors<'src>,
 }
 
-pub(crate) struct Rule<'i> {
-  selector: Selector<'i>,
+pub(crate) struct Rule<'src> {
+  selector: Selector<'src>,
   properties: Vec<(Property, Importance)>,
 }
 
-impl<'i> Rule<'i> {
+impl<'src> Rule<'src> {
   // pub fn matches(&self, element: &E) -> bool where E: Element<'a> {
   //   let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
   //   matches_selector(&self.selector, 0, None, element, &mut context, &mut |_, _| {})
@@ -40,7 +42,7 @@ impl<'i> Rule<'i> {
   // }
 }
 
-pub(crate) fn parse(source: &str) -> WithErrors<'_, Vec<Rule<'_>>> {
+pub(crate) fn parse<'src>(source: &'src str) -> ParseResult<'src> {
   let mut parse_input = ParserInput::new(source);
   let mut parser = Parser::new(&mut parse_input);
 
@@ -54,22 +56,22 @@ pub(crate) fn parse(source: &str) -> WithErrors<'_, Vec<Rule<'_>>> {
       },
       Ok(mut res) => {
         errors.append(&mut res.errors);
-        rules.append(&mut res.inner);
+        rules.append(&mut res.rules);
       },
     }
   });
 
   rules.sort_by(|a, b| a.selector.specificity().cmp(&b.selector.specificity()));
 
-  WithErrors { inner: rules, errors }
+  ParseResult { rules, errors }
 }
 
-impl<'i> QualifiedRuleParser<'i> for CustomParser {
-  type Error = CustomError<'i>;
-  type Prelude = SelectorList<'i>;
-  type QualifiedRule = WithErrors<'i, Vec<Rule<'i>>>;
+impl<'src> QualifiedRuleParser<'src> for CustomParser {
+  type Error = CustomError<'src>;
+  type Prelude = SelectorList<'src>;
+  type QualifiedRule = ParseResult<'src>;
 
-  fn parse_prelude<'t>(&mut self, input: &mut Parser<'i, 't>) -> Result<Self::Prelude, ParseError<'i, Self::Error>> {
+  fn parse_prelude<'t>(&mut self, input: &mut Parser<'src, 't>) -> Result<Self::Prelude, ParseError<'src, Self::Error>> {
     crate::selectors::parse(input).map_err(|e| e.into())
   }
 
@@ -77,8 +79,8 @@ impl<'i> QualifiedRuleParser<'i> for CustomParser {
     &mut self,
     prelude: Self::Prelude,
     _: &ParserState,
-    input: &mut Parser<'i, 't>,
-  ) -> Result<Self::QualifiedRule, ParseError<'i, Self::Error>> {
+    input: &mut Parser<'src, 't>,
+  ) -> Result<Self::QualifiedRule, ParseError<'src, Self::Error>> {
     let mut decs = Vec::new();
     let mut errors = Vec::new();
     for dec in DeclarationListParser::new(input, CustomDecParser) {
@@ -101,15 +103,15 @@ impl<'i> QualifiedRuleParser<'i> for CustomParser {
         }
       })
       .collect();
-    Ok(WithErrors { inner: rules, errors })
+    Ok(ParseResult { rules, errors })
   }
 }
 
-impl<'i> DeclarationParser<'i> for CustomDecParser {
+impl<'src> DeclarationParser<'src> for CustomDecParser {
   type Declaration = (Property, Importance);
-  type Error = CustomError<'i>;
+  type Error = CustomError<'src>;
 
-  fn parse_value<'t>(&mut self, name: CowRcStr<'i>, input: &mut Parser<'i, 't>) -> Result<Self::Declaration, ParseError<'i, Self::Error>> {
+  fn parse_value<'t>(&mut self, name: CowRcStr<'src>, input: &mut Parser<'src, 't>) -> Result<Self::Declaration, ParseError<'src, Self::Error>> {
     let prop = match_ignore_ascii_case! { &name,
       "padding-top" => input.expect_number().map(Property::PaddingTop).map_err(|e| e.into()),
       "padding-bottom" => input.expect_number().map(Property::PaddingBottom).map_err(|e| e.into()),
@@ -135,14 +137,14 @@ impl<'i> DeclarationParser<'i> for CustomDecParser {
 
 // Unsupported: FIXME support dark/light
 
-impl<'i> AtRuleParser<'i> for CustomParser {
-  type AtRule = WithErrors<'i, Vec<Rule<'i>>>;
-  type Error = CustomError<'i>;
+impl<'src> AtRuleParser<'src> for CustomParser {
+  type AtRule = ParseResult<'src>;
+  type Error = CustomError<'src>;
   type Prelude = ();
 }
 
-impl<'i> AtRuleParser<'i> for CustomDecParser {
+impl<'src> AtRuleParser<'src> for CustomDecParser {
   type AtRule = (Property, Importance);
-  type Error = CustomError<'i>;
+  type Error = CustomError<'src>;
   type Prelude = ();
 }

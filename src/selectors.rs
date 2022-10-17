@@ -9,6 +9,12 @@ use parcel_selectors::parser::{NestingRequirement, NonTSPseudoClass, PseudoEleme
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SelectorStr<'a>(CowRcStr<'a>);
 
+impl<'a> AsRef<str> for SelectorStr<'a> {
+  fn as_ref(&self) -> &str {
+    self.0.as_ref()
+  }
+}
+
 impl<'a> From<CowRcStr<'a>> for SelectorStr<'a> {
   fn from(s: CowRcStr<'a>) -> SelectorStr<'a> {
     SelectorStr(s.clone())
@@ -23,15 +29,16 @@ impl<'a> ToCss for SelectorStr<'a> {
 }
 
 impl ToCss for PseudoClass {
-  fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+  fn to_css<W>(&self, f: &mut W) -> fmt::Result
   where W: fmt::Write {
-    dest.write_str(match self {
-      PseudoClass::Active => ":active",
-      PseudoClass::Hover => ":hover",
-      PseudoClass::Focus => ":focus",
-      PseudoClass::Enabled => ":enabled",
-      PseudoClass::Disabled => ":disabled",
-    })
+    write!(f, "{}", &self)
+  }
+}
+
+impl ToCss for PseudoElement {
+  fn to_css<W>(&self, f: &mut W) -> fmt::Result
+  where W: fmt::Write {
+    write!(f, "{}", &self)
   }
 }
 
@@ -44,15 +51,6 @@ impl NonTSPseudoClass<'_> for PseudoClass {
 
   fn is_user_action_state(&self) -> bool {
     true
-  }
-}
-
-impl ToCss for PseudoElement {
-  fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-  where W: fmt::Write {
-    dest.write_str(match self {
-      PseudoElement::Scrollbar => "::scrollbar",
-    })
   }
 }
 

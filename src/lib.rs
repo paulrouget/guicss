@@ -4,5 +4,5 @@ mod selectors;
 mod elements;
 mod stylesheet;
 
-pub use elements::{Arena, Element, NodeId};
+pub use elements::Element;
 pub use stylesheet::{parse, Event, StyleSheet};
