@@ -25,11 +25,9 @@ impl<'src> From<SelectorParseErrorKind<'src>> for CustomError<'src> {
   }
 }
 
-type Errors<'src> = Vec<ParseError<'src, CustomError<'src>>>;
-
 pub(crate) struct ParseResult<'src> {
   pub(crate) rules: Vec<Rule<'src>>,
-  pub(crate) errors: Errors<'src>,
+  pub(crate) errors: Vec<ParseError<'src, CustomError<'src>>>,
 }
 
 pub(crate) struct Rule<'src> {

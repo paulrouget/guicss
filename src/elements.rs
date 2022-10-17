@@ -113,10 +113,7 @@ impl Element {
   }
 }
 
-// #[derive(Clone, Debug)]
-// pub struct ElementRef<'i>(&'i Element);
-
-// FIXME: Most of these methodes are not propertly implemented as we don't support a tree structure yet.
+// FIXME: Most of these methodes are not implemented as we don't support a tree structure yet.
 impl<'css, 'element> parcel_selectors::Element<'css> for &'element Element {
   type Impl = crate::selectors::CustomParser;
   fn opaque(&self) -> OpaqueElement {
