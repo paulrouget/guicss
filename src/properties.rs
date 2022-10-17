@@ -25,6 +25,7 @@ impl Importance {
 #[derive(Debug, Default)]
 pub struct ComputedProperties {
   pub padding_top: f32,
+  pub padding_bottom: f32,
 }
 
 impl ComputedProperties {
@@ -32,6 +33,7 @@ impl ComputedProperties {
     for prop in props {
       match prop {
         Property::PaddingTop(x) => self.padding_top = *x,
+        Property::PaddingBottom(x) => self.padding_bottom = *x,
         _ => { /* FIXME */ },
       }
     }
