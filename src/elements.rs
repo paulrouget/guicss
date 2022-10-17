@@ -1,11 +1,11 @@
-use parcel_selectors::OpaqueElement;
-use parcel_selectors::attr::*;
-use parcel_selectors::matching::MatchingContext;
-use parcel_selectors::matching::ElementSelectorFlags;
+use selectors::OpaqueElement;
+use selectors::attr::*;
+use selectors::matching::MatchingContext;
+use selectors::matching::ElementSelectorFlags;
 
 use std::collections::{HashMap, HashSet};
 
-use crate::selectors::SelectorStr;
+use crate::selectors::SelectorString;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum PseudoClass {
@@ -114,7 +114,7 @@ impl Element {
 }
 
 // FIXME: Most of these methodes are not implemented as we don't support a tree structure yet.
-impl<'css, 'element> parcel_selectors::Element<'css> for &'element Element {
+impl<'element> selectors::Element for &'element Element {
   type Impl = crate::selectors::CustomParser;
   fn opaque(&self) -> OpaqueElement {
     OpaqueElement::new(&self)
@@ -140,7 +140,7 @@ impl<'css, 'element> parcel_selectors::Element<'css> for &'element Element {
   fn is_html_element_in_html_document(&self) -> bool {
     false
   }
-  fn has_local_name(&self, local_name: &SelectorStr) -> bool {
+  fn has_local_name(&self, local_name: &SelectorString) -> bool {
     if let ElementName::Named(name) = &self.name {
       name == local_name.as_ref()
     } else {
@@ -148,7 +148,7 @@ impl<'css, 'element> parcel_selectors::Element<'css> for &'element Element {
     }
   }
 
-  fn has_namespace(&self, _ns: &SelectorStr) -> bool {
+  fn has_namespace(&self, _ns: &SelectorString) -> bool {
     false
   }
 
@@ -159,17 +159,19 @@ impl<'css, 'element> parcel_selectors::Element<'css> for &'element Element {
 
   fn attr_matches(
     &self,
-    ns: &NamespaceConstraint<&SelectorStr>,
-    local_name: &SelectorStr,
-    operation: &AttrSelectorOperation<&SelectorStr>
+    ns: &NamespaceConstraint<&SelectorString>,
+    local_name: &SelectorString,
+    operation: &AttrSelectorOperation<&SelectorString>
     ) -> bool {
     // FIXME
     false
   }
+
+  // ts == tree-structural (fist-child & such)
   fn match_non_ts_pseudo_class<F>(
     &self,
     pc: &PseudoClass,
-    context: &mut MatchingContext<'_, '_, Self::Impl>,
+    context: &mut MatchingContext<'_, Self::Impl>,
     flags_setter: &mut F
     ) -> bool
     where
@@ -179,7 +181,7 @@ impl<'css, 'element> parcel_selectors::Element<'css> for &'element Element {
   fn match_pseudo_element(
     &self,
     pe: &PseudoElement,
-    context: &mut MatchingContext<'_, '_, Self::Impl>
+    context: &mut MatchingContext<'_, Self::Impl>
     ) -> bool {
     if let ElementName::Pseudo(elt) = &self.name {
       elt == pe
@@ -193,18 +195,18 @@ impl<'css, 'element> parcel_selectors::Element<'css> for &'element Element {
   fn is_html_slot_element(&self) -> bool {
     false
   }
-  fn has_id(&self, id: &SelectorStr, _: CaseSensitivity) -> bool {
+  fn has_id(&self, id: &SelectorString, _: CaseSensitivity) -> bool {
     // Not quirks mode. Always case sensitivie
     self.id.as_ref().map(|i| i == id.as_ref()).unwrap_or(false)
   }
-  fn has_class(&self, name: &SelectorStr, _: CaseSensitivity) -> bool {
+  fn has_class(&self, name: &SelectorString, _: CaseSensitivity) -> bool {
     // Not quirks mode. Always case sensitivie
     self.classes.contains(name.as_ref())
   }
-  fn imported_part( &self, name: &SelectorStr) -> Option<SelectorStr<'css>> {
+  fn imported_part( &self, name: &SelectorString) -> Option<SelectorString> {
     None
   }
-  fn is_part(&self, name: &SelectorStr) -> bool {
+  fn is_part(&self, name: &SelectorString) -> bool {
     false
   }
   fn is_empty(&self) -> bool {

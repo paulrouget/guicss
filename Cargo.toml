@@ -8,6 +8,6 @@ crate-type = ["rlib"]
 
 [dependencies]
 log = "0.4"
-parcel_selectors = "0.24"
-cssparser = "0.29"
+selectors = { git = "https://github.com/servo/servo/", rev = "a8deb4d" }
+cssparser = "0.29.6"
 notify = "5.0"

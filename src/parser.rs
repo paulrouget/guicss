@@ -3,9 +3,9 @@ use cssparser::{
   _cssparser_internal_to_lowercase, match_ignore_ascii_case, parse_important,
 };
 
-use parcel_selectors::parser::SelectorParseErrorKind;
-use parcel_selectors::matching::{matches_selector, MatchingMode, MatchingContext};
-use parcel_selectors::context::QuirksMode;
+use selectors::parser::SelectorParseErrorKind;
+use selectors::matching::{matches_selector, MatchingMode, MatchingContext};
+use selectors::context::QuirksMode;
 use crate::properties::{Importance, Property};
 use crate::selectors::{Selector, SelectorList};
 use crate::elements::Element;
@@ -26,16 +26,16 @@ impl<'src> From<SelectorParseErrorKind<'src>> for CustomError<'src> {
 }
 
 pub(crate) struct ParseResult<'src> {
-  pub(crate) rules: Vec<Rule<'src>>,
+  pub(crate) rules: Vec<Rule>,
   pub(crate) errors: Vec<ParseError<'src, CustomError<'src>>>,
 }
 
-pub(crate) struct Rule<'src> {
-  selector: Selector<'src>,
+pub(crate) struct Rule {
+  selector: Selector,
   properties: Vec<(Property, Importance)>,
 }
 
-impl<'src> Rule<'src> {
+impl<'src> Rule {
   pub fn matches<'a>(&self, element: &Element) -> bool {
     let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
     let res = matches_selector(&self.selector, 0, None, &element, &mut context, &mut |_, _| {});
@@ -70,7 +70,7 @@ pub(crate) fn parse<'src>(source: &'src str) -> ParseResult<'src> {
 
 impl<'src> QualifiedRuleParser<'src> for CustomParser {
   type Error = CustomError<'src>;
-  type Prelude = SelectorList<'src>;
+  type Prelude = SelectorList;
   type QualifiedRule = ParseResult<'src>;
 
   fn parse_prelude<'t>(&mut self, input: &mut Parser<'src, 't>) -> Result<Self::Prelude, ParseError<'src, Self::Error>> {

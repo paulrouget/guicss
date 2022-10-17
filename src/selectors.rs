@@ -3,25 +3,25 @@ use std::fmt;
 use crate::elements::{PseudoElement, PseudoClass};
 
 use cssparser::{CowRcStr, ParseError, Parser, SourceLocation, ToCss, _cssparser_internal_to_lowercase, match_ignore_ascii_case};
-use parcel_selectors::parser::{NestingRequirement, NonTSPseudoClass, PseudoElement as PseudoElementTrait, SelectorImpl, SelectorParseErrorKind};
+use selectors::parser::{NonTSPseudoClass, PseudoElement as PseudoElementTrait, SelectorImpl, SelectorParseErrorKind};
 
 // FIXME: could this be just a CowRcStr, not wrapped into LocalName?
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct SelectorStr<'a>(CowRcStr<'a>);
+pub struct SelectorString(String);
 
-impl<'a> AsRef<str> for SelectorStr<'a> {
+impl<'a> AsRef<str> for SelectorString {
   fn as_ref(&self) -> &str {
     self.0.as_ref()
   }
 }
 
-impl<'a> From<CowRcStr<'a>> for SelectorStr<'a> {
-  fn from(s: CowRcStr<'a>) -> SelectorStr<'a> {
-    SelectorStr(s.clone())
+impl From<&str> for SelectorString {
+  fn from(s: &str) -> SelectorString {
+    SelectorString(s.to_string())
   }
 }
 
-impl<'a> ToCss for SelectorStr<'a> {
+impl ToCss for SelectorString {
   fn to_css<W>(&self, dest: &mut W) -> fmt::Result
   where W: fmt::Write {
     dest.write_str(&self.0)
@@ -42,7 +42,7 @@ impl ToCss for PseudoElement {
   }
 }
 
-impl NonTSPseudoClass<'_> for PseudoClass {
+impl NonTSPseudoClass for PseudoClass {
   type Impl = CustomParser;
 
   fn is_active_or_hover(&self) -> bool {
@@ -54,37 +54,35 @@ impl NonTSPseudoClass<'_> for PseudoClass {
   }
 }
 
-impl PseudoElementTrait<'_> for PseudoElement {
+impl PseudoElementTrait for PseudoElement {
   type Impl = CustomParser;
 }
 
-pub(crate) type SelectorList<'i> = parcel_selectors::SelectorList<'i, CustomParser>;
-pub(crate) type Selector<'i> = parcel_selectors::parser::Selector<'i, CustomParser>;
+pub(crate) type SelectorList = selectors::SelectorList<CustomParser>;
+pub(crate) type Selector = selectors::parser::Selector<CustomParser>;
 
-impl<'i> SelectorImpl<'i> for CustomParser {
-  type AttrValue = SelectorStr<'i>;
-  type BorrowedLocalName = SelectorStr<'i>;
-  type BorrowedNamespaceUrl = SelectorStr<'i>;
+impl<'i> SelectorImpl for CustomParser {
+  type AttrValue = SelectorString;
+  type BorrowedLocalName = SelectorString;
+  type BorrowedNamespaceUrl = SelectorString;
   type ExtraMatchingData = ();
-  type Identifier = SelectorStr<'i>;
-  type LocalName = SelectorStr<'i>;
-  type NamespacePrefix = SelectorStr<'i>;
-  type NamespaceUrl = SelectorStr<'i>;
+  type Identifier = SelectorString;
+  type LocalName = SelectorString;
+  type NamespacePrefix = SelectorString;
+  type NamespaceUrl = SelectorString;
   type NonTSPseudoClass = PseudoClass;
   type PseudoElement = PseudoElement;
-  type VendorPrefix = SelectorStr<'i>;
 }
 
 #[derive(Clone, Debug)]
 pub struct CustomParser;
 
-pub(crate) fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<SelectorList<'i>, ParseError<'i, SelectorParseErrorKind<'i>>> {
+pub(crate) fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<SelectorList, ParseError<'i, SelectorParseErrorKind<'i>>> {
   let parser = CustomParser;
-  let reqs = NestingRequirement::None;
-  SelectorList::parse(&parser, input, reqs)
+  SelectorList::parse(&parser, input)
 }
 
-impl<'i> parcel_selectors::parser::Parser<'i> for CustomParser {
+impl<'i> selectors::parser::Parser<'i> for CustomParser {
   type Error = SelectorParseErrorKind<'i>;
   type Impl = CustomParser;
 
