@@ -25,6 +25,88 @@ impl<'src> From<SelectorParseErrorKind<'src>> for CustomError<'src> {
   }
 }
 
+pub(crate) struct ErrorFormatter<'a, 'b, 'c>(pub &'a ParseError<'b, CustomError<'c>>);
+
+impl std::fmt::Display for ErrorFormatter<'_, '_, '_> {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    use cssparser::ParseErrorKind;
+    use cssparser::BasicParseErrorKind;
+    use selectors::parser::SelectorParseErrorKind as SPEK;
+    use cssparser::ToCss;
+
+    write!(f, "[{}:{}]: ", self.0.location.line, self.0.location.column)?;
+
+    match &self.0.kind {
+      ParseErrorKind::Basic(e) => match e {
+        BasicParseErrorKind::UnexpectedToken(token) => {
+          write!(f, "unexpected token: ")?;
+          token.to_css(f)
+        },
+        BasicParseErrorKind::EndOfInput => write!(f, "unexpected end of input"),
+        BasicParseErrorKind::AtRuleInvalid(s) => write!(f, "invalid AtRule: {}", s),
+        BasicParseErrorKind::AtRuleBodyInvalid => write!(f, "invalid AtRule body"),
+        BasicParseErrorKind::QualifiedRuleInvalid => write!(f, "qualified rule invalid"),
+      },
+      ParseErrorKind::Custom(e) => match e {
+        CustomError::UnknownProperty(s) => write!(f, "unknown property: {}", s),
+        CustomError::SelectorError(e) => match e {
+          SPEK::UnsupportedPseudoClassOrElement(s) => write!(f, "unsupported pseudoClass or pseudoElement: {}", s),
+          SPEK::UnexpectedIdent(s) => write!(f, "unexpected identifier: {}", s),
+          SPEK::ExpectedNamespace(s) => write!(f, "expected namespace: {}", s),
+          SPEK::NonCompoundSelector => write!(f, "non compound selector"),
+          SPEK::NonPseudoElementAfterSlotted => write!(f, "non pseudoElement after slotted"),
+          SPEK::InvalidPseudoElementAfterSlotted => write!(f, "invalid pseudoElement after slotted"),
+          SPEK::InvalidPseudoElementInsideWhere => write!(f, "invalid pseudoElement inside where"),
+          SPEK::NoQualifiedNameInAttributeSelector(token) => {
+            write!(f, "no qualified name in attribut selector")?;
+            token.to_css(f)
+          },
+          SPEK::PseudoElementExpectedColon(token) => {
+            write!(f, "pseudoElement expected colon")?;
+            token.to_css(f)
+          },
+          SPEK::NoIdentForPseudo(token) => {
+            write!(f, "No identifier for pseudo")?;
+            token.to_css(f)
+          },
+          SPEK::EmptySelector => write!(f, "empty selector"),
+          SPEK::DanglingCombinator => write!(f, "dangling combinator"),
+          SPEK::InvalidState => write!(f, "invalid state"),
+          SPEK::UnexpectedTokenInAttributeSelector(token) => {
+            write!(f, "unexpected token in attribute selector")?;
+            token.to_css(f)
+          },
+          SPEK::PseudoElementExpectedIdent(token) => {
+            write!(f, "pseudoElement expected")?;
+            token.to_css(f)
+          },
+          SPEK::ExpectedBarInAttr(token) => {
+            write!(f, "expected bar in attribute")?;
+            token.to_css(f)
+          },
+          SPEK::BadValueInAttr(token) => {
+            write!(f, "bad value in attribute")?;
+            token.to_css(f)
+          },
+          SPEK::InvalidQualNameInAttr(token) => {
+            write!(f, "invalid qualified name in attribute")?;
+            token.to_css(f)
+          },
+          SPEK::ExplicitNamespaceUnexpectedToken(token) => {
+            write!(f, "explicit namespace unexpected token")?;
+            token.to_css(f)
+          },
+          SPEK::ClassNeedsIdent(token) => {
+            write!(f, "class needs identifier")?;
+            token.to_css(f)
+          },
+        }
+      },
+    }
+  }
+}
+
+
 pub(crate) struct ParseResult<'src> {
   pub(crate) rules: Rules,
   pub(crate) errors: Vec<ParseError<'src, CustomError<'src>>>,
@@ -96,7 +178,7 @@ impl<'src> QualifiedRuleParser<'src> for CustomParser {
     prelude: Self::Prelude,
     _: &ParserState,
     input: &mut Parser<'src, 't>,
-  ) -> Result<Self::QualifiedRule, ParseError<'src, Self::Error>> {
+    ) -> Result<Self::QualifiedRule, ParseError<'src, Self::Error>> {
     let mut decs = Vec::new();
     let mut errors = Vec::new();
     for dec in DeclarationListParser::new(input, CustomDecParser) {
@@ -118,7 +200,7 @@ impl<'src> QualifiedRuleParser<'src> for CustomParser {
           properties: decs.clone(),
         }
       })
-      .collect();
+    .collect();
     Ok(ParseResult { rules: Rules(rules), errors })
   }
 }

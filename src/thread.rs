@@ -4,8 +4,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use log::debug;
 use notify::event::{DataChange, EventKind, ModifyKind};
 use notify::{RecursiveMode, Watcher};
-
-use crate::parser::Rules;
+use crate::parser::{ErrorFormatter, Rules};
 
 #[derive(Debug)]
 pub enum Event {
@@ -74,7 +73,7 @@ pub fn parse(path: PathBuf) -> BgParser {
       },
       Ok(source) => {
         let parsed = crate::parser::parse(&source);
-        let errors = parsed.errors.iter().map(|e| format!("{:?}", e)).collect();
+        let errors = parsed.errors.iter().map(|e| format!("CSS Error: {}", ErrorFormatter(e))).collect();
         send(&to_main, Event::Parsed(parsed.rules, errors));
       },
     }
