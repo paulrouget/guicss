@@ -1,46 +1,47 @@
 hbox {
-  padding-top: 42.0;
+  padding-top: 43.0;
 }
 
-meh, foo::xxx {
+meh {
 }
 
 ::scrollbar {
 }
 
 foo#myid:focus {
+  padding-top: 19px;
+  padding-bottom: 21px;
 }
 
 .test + lol {
-  foo: 42;
-  bar: "babar";
+  foo: 42.0;
 }
 
 #test {
 }
 
 foo {
-  foo: 42;
+  foo: 41;
 }
 
-foo:hover {
-  backgorund: red;
-}
+/* foo:hover { */
+/*   background: red; */
+/* } */
 
-xxx, yyy {
-  foo: 12 !important;
-}
+/* xxx, yyy { */
+/*   foo: 12 !important; */
+/* } */
 
-xxx {
-  lol: 1;
-  bar: "4";
-}
+/* xxx { */
+/*   lol: 1; */
+/*   bar: "4"; */
+/* } */
 
-xxx, yyy {
-  /* comment */
-  foo: 0;
-  bar: 1;
-}
+/* xxx, yyy { */
+/*   /1* comment *1/ */
+/*   foo: 0; */
+/*   bar: 1; */
+/* } */
 
 
 /* variables { */

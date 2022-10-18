@@ -208,13 +208,27 @@ impl<'src> QualifiedRuleParser<'src> for CustomParser {
   }
 }
 
+use cssparser::Token;
+
+fn parse_px<'i, 't>(input: &mut Parser<'i, 't>) -> Result<f32, ParseError<'i, CustomError<'i>>> {
+  let location = input.current_source_location();
+  let token = input.next()?;
+  match *token {
+    Token::Dimension { value, ref unit, .. } => match unit.as_ref() {
+       "px" => Ok(value),
+      _ => return Err(location.new_unexpected_token_error(token.clone())),
+    },
+    ref token => return Err(location.new_unexpected_token_error(token.clone())),
+  }
+}
+
 impl<'src> DeclarationParser<'src> for CustomDecParser {
   type Declaration = (Property, Importance);
   type Error = CustomError<'src>;
 
   fn parse_value<'t>(&mut self, name: CowRcStr<'src>, input: &mut Parser<'src, 't>) -> Result<Self::Declaration, ParseError<'src, Self::Error>> {
     let prop = match_ignore_ascii_case! { &name,
-      "padding-top" => input.expect_number().map(Property::PaddingTop).map_err(|e| e.into()),
+      "padding-top" => input.try_parse(parse_px).map(Property::PaddingTop).map_err(|e| e.into()),
       "padding-bottom" => input.expect_number().map(Property::PaddingBottom).map_err(|e| e.into()),
       "padding-left" => input.expect_number().map(Property::PaddingLeft).map_err(|e| e.into()),
       "padding-right" => input.expect_number().map(Property::PaddingRight).map_err(|e| e.into()),
@@ -231,7 +245,6 @@ impl<'src> DeclarationParser<'src> for CustomDecParser {
       };
       (p, importance)
     });
-    input.expect_exhausted()?;
     prop
   }
 }
