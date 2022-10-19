@@ -71,7 +71,7 @@ impl<'i> ParserResult {
         s1.specificity().cmp(&s2.specificity())
       });
       rules.iter().filter(|(s, _)| {
-        let mut context: MatchingContext<'_, 'i, lightningcss::selector::Selectors> = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
+        let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
         matches_selector(s, 0, None, &element, &mut context, &mut |_, _| {})
       }).for_each(|x| todo!());
 
