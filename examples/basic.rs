@@ -5,7 +5,7 @@ fn main() {
 
   let parser = bgcss::parse(path);
 
-  let elt = Element::named("foo");
+  let elt = Element::named("hbox");
 
   loop {
     println!("Waiting parsing event");

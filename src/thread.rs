@@ -17,6 +17,7 @@ use lightningcss::parcel_selectors::parser::Selector;
 use lightningcss::selector::Selectors;
 
 use crate::elements::Element;
+use crate::properties::ComputedProperties;
 
 pub enum Event {
   FileChanged,
@@ -56,6 +57,7 @@ pub struct ParserResult {
 
 impl<'i> ParserResult {
   pub fn compute(&self, element: &Element<'i>) {
+    let mut computed = ComputedProperties::default();
     self.with_stylesheet(|s| {
       let mut rules: Vec<(&Selector<Selectors>, &DeclarationBlock)> = s.rules.0.iter().filter_map(|rule| {
         match rule {
@@ -70,11 +72,22 @@ impl<'i> ParserResult {
       rules.sort_by(|(s1, _), (s2, _)| {
         s1.specificity().cmp(&s2.specificity())
       });
-      rules.iter().filter(|(s, _)| {
+      rules.iter().filter_map(|(s, decs)| {
         let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
-        matches_selector(s, 0, None, &element, &mut context, &mut |_, _| {})
-      }).for_each(|x| todo!());
-
+        if matches_selector(s, 0, None, &element, &mut context, &mut |_, _| {}) {
+          Some(decs)
+        } else {
+          None
+        }
+      }).for_each(|decs| {
+        // FIXME: support decs.important_declarations
+        for prop in &decs.declarations {
+          if let Err(e) = computed.apply(prop) {
+            eprintln!("{}", e);
+          }
+        }
+        println!("Computed property: {:?}", computed);
+      })
     })
   }
 }
