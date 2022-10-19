@@ -13,6 +13,8 @@ use lightningcss::stylesheet::{StyleSheet, ParserOptions};
 use lightningcss::declaration::DeclarationBlock;
 use lightningcss::parcel_selectors::context::QuirksMode;
 use lightningcss::parcel_selectors::matching::{MatchingContext, MatchingMode, matches_selector};
+use lightningcss::parcel_selectors::parser::Selector;
+use lightningcss::selector::Selectors;
 
 use crate::elements::Element;
 
@@ -55,8 +57,7 @@ pub struct ParserResult {
 impl<'i> ParserResult {
   pub fn compute(&self, element: &Element<'i>) {
     self.with_stylesheet(|s| {
-      pub type Selector = lightningcss::parcel_selectors::parser::Selector<'x, lightningcss::selector::Selectors>;
-      let mut rules: Vec<(&Selector, &DeclarationBlock)> = s.rules.0.iter().filter_map(|rule| {
+      let mut rules: Vec<(&Selector<Selectors>, &DeclarationBlock)> = s.rules.0.iter().filter_map(|rule| {
         match rule {
           CssRule::Style(style) => Some(style),
           _ => None,
