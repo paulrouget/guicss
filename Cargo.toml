@@ -7,7 +7,11 @@ edition = "2021"
 crate-type = ["rlib"]
 
 [dependencies]
+lightningcss = "1.0.0-alpha.35"
 log = "0.4"
-selectors = { git = "https://github.com/servo/servo/", rev = "a8deb4d" }
-cssparser = "0.29.6"
 notify = "5.0"
+ouroboros = "0.15.5"
+anyhow = "1.0"
+
+[patch.crates-io]
+lightningcss = { path = "../lightningcss/" }

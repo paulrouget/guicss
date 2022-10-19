@@ -1,3 +1,16 @@
+@media (prefers-color-scheme: dark) {
+  :root {
+    margin: 2px;
+  }
+}
+
+@media (os-version: macos) {
+  :root {
+    margin: 2px;
+  }
+}
+
+
 hbox {
   padding-top: 43px;
   padding-bottom: 0;
@@ -18,13 +31,15 @@ hbox {
 meh {
 }
 
+/*
 ::scrollbar {
 }
+*/
 
-foo#myid:focus {
-  padding-top: 19px;
-  padding-bottom: 21px;
-}
+/* foo#myid:focus { */
+/*   padding-top: 19px; */
+/*   padding-bottom: 21px; */
+/* } */
 
 .test + lol {
   foo: 42.0;

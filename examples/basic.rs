@@ -5,13 +5,7 @@ fn main() {
 
   let parser = bgcss::parse(path);
 
-  let root = Element::named("foo");
-  // let hbox = Element::named("hbox");
-  // let vbox = Element::named("vbox");
-  // let n11 = Element::named("node").id("n11");
-  // let n12 = Element::named("node").id("n12");
-  // let n13 = Element::unamed();
-  // let scrollbar = Element::scrollbar();
+  let elt = Element::named("foo");
 
   loop {
     println!("Waiting parsing event");
@@ -21,13 +15,8 @@ fn main() {
         println!("Got error: {:?}", e);
         return;
       },
-      Ok(Event::Parsed(rules, errors)) => {
-        for error in errors {
-          println!("css error: {}", error);
-        }
-
-        rules.compute(&root);
-
+      Ok(Event::Parsed(rules)) => {
+        rules.compute(&elt);
         println!("Event: Parsed");
       },
       Ok(event) => {
