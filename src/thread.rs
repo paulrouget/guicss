@@ -55,7 +55,7 @@ pub struct ParserResult {
 impl<'i> ParserResult {
   pub fn compute(&self, element: &Element<'i>) {
     self.with_stylesheet(|s| {
-      pub type Selector<'x> = lightningcss::parcel_selectors::parser::Selector<'x, lightningcss::selector::Selectors>;
+      pub type Selector = lightningcss::parcel_selectors::parser::Selector<'x, lightningcss::selector::Selectors>;
       let mut rules: Vec<(&Selector, &DeclarationBlock)> = s.rules.0.iter().filter_map(|rule| {
         match rule {
           CssRule::Style(style) => Some(style),
