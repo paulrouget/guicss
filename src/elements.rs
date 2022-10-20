@@ -139,7 +139,12 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
     other.name == self.name
   }
 
-  fn attr_matches(&self, _: &NamespaceConstraint<&SelectorIdent<'_>>, _local_name: &SelectorIdent<'_>, _operation: &AttrSelectorOperation<&SelectorString<'_>>) -> bool {
+  fn attr_matches(
+    &self,
+    _: &NamespaceConstraint<&SelectorIdent<'_>>,
+    _local_name: &SelectorIdent<'_>,
+    _operation: &AttrSelectorOperation<&SelectorString<'_>>,
+  ) -> bool {
     // FIXME
     false
   }
@@ -147,7 +152,11 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
   // ts == tree-structural (fist-child & such)
   fn match_non_ts_pseudo_class<F>(&self, pc: &PseudoClass<'i>, _context: &mut MatchingContext<'_, '_, Self::Impl>, _flags_setter: &mut F) -> bool
   where F: FnMut(&Self, ElementSelectorFlags) {
-    use PseudoClass::{Active, AnyLink, Autofill, Blank, Buffering, Checked, Current, Custom, Default, Defined, Dir, Disabled, Enabled, Focus, FocusVisible, FocusWithin, Fullscreen, Future, Hover, InRange, Indeterminate, Invalid, Link, LocalLink, Muted, Optional, OutOfRange, Past, Paused, PlaceholderShown, Playing, ReadOnly, ReadWrite, Required, Seeking, Stalled, Target, TargetWithin, UserInvalid, UserValid, Valid, Visited, VolumeLocked, WebKitScrollbar};
+    use PseudoClass::{
+      Active, AnyLink, Autofill, Blank, Buffering, Checked, Current, Custom, Default, Defined, Dir, Disabled, Enabled, Focus, FocusVisible, FocusWithin,
+      Fullscreen, Future, Hover, InRange, Indeterminate, Invalid, Link, LocalLink, Muted, Optional, OutOfRange, Past, Paused, PlaceholderShown, Playing,
+      ReadOnly, ReadWrite, Required, Seeking, Stalled, Target, TargetWithin, UserInvalid, UserValid, Valid, Visited, VolumeLocked, WebKitScrollbar,
+    };
     self.pseudo_classes.iter().any(|a| {
       match (a, pc) {
         (Hover, Hover) => true,
