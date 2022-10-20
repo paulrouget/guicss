@@ -158,7 +158,8 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
       Fullscreen, Future, Hover, InRange, Indeterminate, Invalid, Link, LocalLink, Muted, Optional, OutOfRange, Past, Paused, PlaceholderShown, Playing,
       ReadOnly, ReadWrite, Required, Seeking, Stalled, Target, TargetWithin, UserInvalid, UserValid, Valid, Visited, VolumeLocked, WebKitScrollbar,
     };
-    // FIXME: this exist because we can't use PartialEq (==) between 2 elements of same lifetime.
+    // FIXME: this exist because we can't use PartialEq (==) between 2 elements of
+    // same lifetime.
     self.pseudo_classes.iter().any(|a| {
       match (a, pc) {
         (Hover, Hover) => true,
