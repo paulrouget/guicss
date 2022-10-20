@@ -150,6 +150,7 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
   }
 
   // ts == tree-structural (fist-child & such)
+  #[allow(clippy::match_same_arms)]
   fn match_non_ts_pseudo_class<F>(&self, pc: &PseudoClass<'i>, _context: &mut MatchingContext<'_, '_, Self::Impl>, _flags_setter: &mut F) -> bool
   where F: FnMut(&Self, ElementSelectorFlags) {
     use PseudoClass::{
@@ -158,7 +159,6 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
       ReadOnly, ReadWrite, Required, Seeking, Stalled, Target, TargetWithin, UserInvalid, UserValid, Valid, Visited, VolumeLocked, WebKitScrollbar,
     };
     self.pseudo_classes.iter().any(|a| {
-      #[allow(clippy::match_same_arms)]
       match (a, pc) {
         (Hover, Hover) => true,
         (Active, Active) => true,
