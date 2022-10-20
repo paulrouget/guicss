@@ -1,31 +1,25 @@
-use lightningcss::stylesheet::PrinterOptions;
-use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
-use lightningcss::properties::Property;
-use lightningcss::properties::custom::{CustomProperty, TokenOrValue, UnparsedProperty, Variable, };
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver, Sender};
-use ouroboros::self_referencing;
 
 use anyhow::{anyhow, Result};
-
+use lightningcss::declaration::DeclarationBlock;
+use lightningcss::media_query::{MediaFeature, MediaFeatureValue, MediaQuery, Operator, Qualifier};
+use lightningcss::parcel_selectors::context::QuirksMode;
+use lightningcss::parcel_selectors::matching::{matches_selector, MatchingContext, MatchingMode};
+use lightningcss::parcel_selectors::parser::Selector;
+use lightningcss::printer::Printer;
+use lightningcss::properties::custom::{CustomProperty, TokenOrValue, UnparsedProperty, Variable};
+use lightningcss::properties::Property;
+use lightningcss::rules::media::MediaRule;
+use lightningcss::rules::CssRule;
+use lightningcss::selector::Selectors;
+use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
+use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
 use log::debug;
 use notify::event::{DataChange, EventKind, ModifyKind};
 use notify::{RecursiveMode, Watcher};
-
-use lightningcss::rules::CssRule;
-use lightningcss::rules::media::MediaRule;
-use lightningcss::media_query::MediaQuery;
-use lightningcss::stylesheet::{StyleSheet, ParserOptions};
-use lightningcss::declaration::DeclarationBlock;
-use lightningcss::parcel_selectors::context::QuirksMode;
-use lightningcss::parcel_selectors::matching::{MatchingContext, MatchingMode, matches_selector};
-use lightningcss::parcel_selectors::parser::Selector;
-use lightningcss::selector::Selectors;
-use lightningcss::printer::Printer;
-use lightningcss::media_query::Operator;
-use lightningcss::media_query::Qualifier;
-use lightningcss::media_query::{MediaFeature, MediaFeatureValue};
+use ouroboros::self_referencing;
 
 use crate::elements::Element;
 use crate::properties::ComputedProperties;
@@ -68,78 +62,104 @@ pub struct ParserResult {
 
 impl<'i> ParserResult {
   pub fn compute(&self, element: &Element<'i>) {
-
     let mut variables = HashMap::new();
     let mut computed = ComputedProperties::default();
 
     self.with_stylesheet(|s| {
-      let mut rules: Vec<(&Selector<Selectors>, &DeclarationBlock)> = s.rules.0.iter().filter_map(|rule| {
-        match rule {
-          CssRule::Style(style) => Some([style].to_vec()),
-          CssRule::Media(MediaRule { query, rules, .. }) => {
-            let matches = query.media_queries.iter().any(|MediaQuery { qualifier, media_type: _, condition }| {
-              match qualifier {
-                Some(Qualifier::Not) => !condition.as_ref().map(|c| check_media_query(c)).unwrap_or(true),
-                _ => condition.as_ref().map(|c| check_media_query(c)).unwrap_or(true),
+      let mut rules: Vec<(&Selector<Selectors>, &DeclarationBlock)> = s
+        .rules
+        .0
+        .iter()
+        .filter_map(|rule| {
+          match rule {
+            CssRule::Style(style) => Some([style].to_vec()),
+            CssRule::Media(MediaRule { query, rules, .. }) => {
+              let matches = query.media_queries.iter().any(
+                |MediaQuery {
+                   qualifier,
+                   media_type: _,
+                   condition,
+                 }| {
+                  match qualifier {
+                    Some(Qualifier::Not) => !condition.as_ref().map(|c| check_media_query(c)).unwrap_or(true),
+                    _ => condition.as_ref().map(|c| check_media_query(c)).unwrap_or(true),
+                  }
+                },
+              );
+              if matches {
+                // FIXME: only keeping on nesting level of media queries
+                Some(
+                  rules
+                    .0
+                    .iter()
+                    .filter_map(|r| {
+                      match r {
+                        CssRule::Style(style) => Some(style),
+                        _ => None,
+                      }
+                    })
+                    .collect(),
+                )
+              } else {
+                None
               }
-            });
-            if matches {
-              // FIXME: only keeping on nesting level of media queries
-              Some(rules.0.iter().filter_map(|r| {
-                match r {
-                  CssRule::Style(style) => Some(style),
-                  _ => None,
-                }
-              }).collect())
-            } else {
+            },
+            unknown => {
+              println!("Unsupported: {:?}", unknown);
               None
-            }
-          },
-          unknown => {
-            println!("Unsupported: {:?}", unknown);
-            None
-          },
-        }
-      }).flatten().map(|style| {
-        style.selectors.0.iter().map(|s| {
-          (s, &style.declarations)
+            },
+          }
         })
-      }).flatten().collect();
-      rules.sort_by(|(s1, _), (s2, _)| {
-        s1.specificity().cmp(&s2.specificity())
-      });
+        .flatten()
+        .map(|style| style.selectors.0.iter().map(|s| (s, &style.declarations)))
+        .flatten()
+        .collect();
+      rules.sort_by(|(s1, _), (s2, _)| s1.specificity().cmp(&s2.specificity()));
 
       let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
-      let (normal, important): (Vec<_>, Vec<_>) = rules.into_iter().filter_map(|(s, decs)| {
-        if matches_selector(s, 0, None, &element, &mut context, &mut |_, _| {}) {
-          Some((&decs.declarations, &decs.important_declarations))
-        } else {
-          None
-        }
-      }).unzip();
+      let (normal, important): (Vec<_>, Vec<_>) = rules
+        .into_iter()
+        .filter_map(|(s, decs)| {
+          if matches_selector(s, 0, None, &element, &mut context, &mut |_, _| {}) {
+            Some((&decs.declarations, &decs.important_declarations))
+          } else {
+            None
+          }
+        })
+        .unzip();
 
       let normal = normal.into_iter().flatten();
       let important = important.into_iter().flatten();
 
       let all = normal.chain(important);
 
-      let without_var: Vec<_> = all.filter(|prop| {
-        if let Property::Custom(CustomProperty { name, value: tokens }) = prop {
-          if name.starts_with("--") {
-            let mut source = String::new();
-            let mut printer = Printer::new(&mut source, PrinterOptions::default());
-            tokens.to_css(&mut printer, false).unwrap();
-            variables.insert(name.clone(), source.clone());
-            return false
+      let without_var: Vec<_> = all
+        .filter(|prop| {
+          if let Property::Custom(CustomProperty { name, value: tokens }) = prop {
+            if name.starts_with("--") {
+              let mut source = String::new();
+              let mut printer = Printer::new(&mut source, PrinterOptions::default());
+              tokens.to_css(&mut printer, false).unwrap();
+              variables.insert(name.clone(), source.clone());
+              return false;
+            }
           }
-        }
-        true
-      }).collect();
+          true
+        })
+        .collect();
 
       for prop in without_var {
-        if let Property::Unparsed(UnparsedProperty { property_id: id, value: tokens }) = prop {
+        if let Property::Unparsed(UnparsedProperty {
+          property_id: id,
+          value: tokens,
+        }) = prop
+        {
           if let Some(token) = tokens.0.get(0) {
-            if let TokenOrValue::Var(Variable { name: DashedIdentReference { ident: DashedIdent(name), .. }, .. }) = token {
+            if let TokenOrValue::Var(Variable {
+              name: DashedIdentReference { ident: DashedIdent(name), .. },
+              ..
+            }) = token
+            {
               if let Some(source) = variables.get(name) {
                 if let Ok(prop) = Property::parse_string(id.clone(), &source, ParserOptions::default()) {
                   if let Err(e) = computed.apply(&prop) {
@@ -240,17 +260,19 @@ fn parse(path: &Path) -> Result<ParserResult> {
         filename: path.to_string_lossy().to_string(),
         ..ParserOptions::default()
       };
-      StyleSheet::parse(source, options).map_err(|e| {
-        anyhow!("Parsing error: {}", e)
-      })
+      StyleSheet::parse(source, options).map_err(|e| anyhow!("Parsing error: {}", e))
     },
-  }.try_build()
+  }
+  .try_build()
 }
 
 fn check_media_query(condition: &lightningcss::media_query::MediaCondition<'_>) -> bool {
   use lightningcss::media_query::MediaCondition::*;
   match condition {
-    Feature(MediaFeature::Plain { name, value: MediaFeatureValue::Ident(ident) }) => {
+    Feature(MediaFeature::Plain {
+      name,
+      value: MediaFeatureValue::Ident(ident),
+    }) => {
       match name.as_ref() {
         "os-version" => ident.as_ref() == std::env::consts::OS,
         "prefers-color-scheme" => ident.as_ref() == "light", // FIXME
@@ -261,9 +283,9 @@ fn check_media_query(condition: &lightningcss::media_query::MediaCondition<'_>) 
     Operation(conditions, Operator::And) => conditions.iter().all(check_media_query),
     Operation(conditions, Operator::Or) => conditions.iter().any(check_media_query),
     InParens(condition) => check_media_query(condition),
-    _ => { // Unsupported
+    _ => {
+      // Unsupported
       false
-    }
+    },
   }
 }
-

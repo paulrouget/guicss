@@ -1,10 +1,12 @@
 use anyhow::{bail, Result};
-use lightningcss::properties::Property;
-use lightningcss::printer::PrinterOptions;
 use lightningcss::cssparser::RGBA;
+use lightningcss::printer::PrinterOptions;
+use lightningcss::properties::Property;
 
 #[derive(Debug, Default)]
-pub struct Corners<T> where T: Default {
+pub struct Corners<T>
+where T: Default
+{
   nw: (T, T),
   ne: (T, T),
   sw: (T, T),
@@ -12,7 +14,9 @@ pub struct Corners<T> where T: Default {
 }
 
 #[derive(Debug, Default)]
-pub struct Sides<T> where T: Default {
+pub struct Sides<T>
+where T: Default
+{
   top: T,
   right: T,
   bottom: T,
@@ -30,18 +34,15 @@ pub struct ComputedProperties {
 
 impl ComputedProperties {
   pub fn apply(&mut self, p: &Property) -> Result<()> {
-    use Property as P;
+    use lightningcss::properties::border::{BorderColor, BorderSideWidth, BorderWidth, GenericBorder};
+    use lightningcss::properties::border_radius::BorderRadius;
+    use lightningcss::properties::margin_padding::{Margin, Padding};
+    use lightningcss::values::length::Length;
     use lightningcss::values::length::LengthPercentageOrAuto::LengthPercentage;
     use lightningcss::values::length::LengthValue::Px;
-    use lightningcss::values::length::Length;
-    use lightningcss::values::size::Size2D;
     use lightningcss::values::percentage::DimensionPercentage::Dimension;
-    use lightningcss::properties::margin_padding::{Padding, Margin};
-    use lightningcss::properties::border::BorderColor;
-    use lightningcss::properties::border::BorderSideWidth;
-    use lightningcss::properties::border::BorderWidth;
-    use lightningcss::properties::border::GenericBorder;
-    use lightningcss::properties::border_radius::BorderRadius;
+    use lightningcss::values::size::Size2D;
+    use Property as P;
 
     match p {
       P::PaddingTop(LengthPercentage(Dimension(Px(v)))) => self.padding.top = *v,
@@ -114,7 +115,7 @@ impl ComputedProperties {
         self.border.bottom = v.clone();
         self.border.left = v.clone();
         self.border.right = v.clone();
-      }
+      },
       P::BackgroundColor(c) => {
         self.background_color = Some(c.into());
       },
@@ -122,12 +123,15 @@ impl ComputedProperties {
       P::BorderTopRightRadius(Size2D(Dimension(Px(a)), Dimension(Px(b))), _) => self.border_radius.ne = (*a, *b),
       P::BorderBottomLeftRadius(Size2D(Dimension(Px(a)), Dimension(Px(b))), _) => self.border_radius.sw = (*a, *b),
       P::BorderBottomRightRadius(Size2D(Dimension(Px(a)), Dimension(Px(b))), _) => self.border_radius.se = (*a, *b),
-      P::BorderRadius(BorderRadius {
-        top_left: Size2D(Dimension(Px(nwa)), Dimension(Px(nwb))),
-        top_right: Size2D(Dimension(Px(nea)), Dimension(Px(neb))),
-        bottom_left: Size2D(Dimension(Px(swa)), Dimension(Px(swb))),
-        bottom_right: Size2D(Dimension(Px(sea)), Dimension(Px(seb))),
-      }, _) => {
+      P::BorderRadius(
+        BorderRadius {
+          top_left: Size2D(Dimension(Px(nwa)), Dimension(Px(nwb))),
+          top_right: Size2D(Dimension(Px(nea)), Dimension(Px(neb))),
+          bottom_left: Size2D(Dimension(Px(swa)), Dimension(Px(swb))),
+          bottom_right: Size2D(Dimension(Px(sea)), Dimension(Px(seb))),
+        },
+        _,
+      ) => {
         self.border_radius.nw = (*nwa, *nwb);
         self.border_radius.ne = (*nea, *neb);
         self.border_radius.sw = (*swa, *swb);
@@ -139,7 +143,7 @@ impl ComputedProperties {
           Ok(css) => bail!("Unsupported property: {}", css),
           Err(e) => bail!("Unexpected error: {}", e),
         }
-      }
+      },
     }
     Ok(())
   }

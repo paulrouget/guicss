@@ -5,7 +5,7 @@ use lightningcss::parcel_selectors;
 use lightningcss::parcel_selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use lightningcss::parcel_selectors::matching::{ElementSelectorFlags, MatchingContext};
 use lightningcss::parcel_selectors::OpaqueElement;
-use lightningcss::selector::{PseudoElement, PseudoClass, Selectors, SelectorIdent, SelectorString, WebKitScrollbarPseudoElement};
+use lightningcss::selector::{PseudoClass, PseudoElement, SelectorIdent, SelectorString, Selectors, WebKitScrollbarPseudoElement};
 
 #[derive(Debug, Default, PartialEq)]
 pub enum ElementName<'i> {
@@ -146,9 +146,10 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
 
   // ts == tree-structural (fist-child & such)
   fn match_non_ts_pseudo_class<F>(&self, pc: &PseudoClass<'i>, _context: &mut MatchingContext<'_, '_, Self::Impl>, _flags_setter: &mut F) -> bool
-    where F: FnMut(&Self, ElementSelectorFlags) {
-      use PseudoClass::*;
-      self.pseudo_classes.iter().any(|a| match (a, pc) {
+  where F: FnMut(&Self, ElementSelectorFlags) {
+    use PseudoClass::*;
+    self.pseudo_classes.iter().any(|a| {
+      match (a, pc) {
         (Hover, Hover) => true,
         (Active, Active) => true,
         (Focus, Focus) => true,
@@ -188,9 +189,9 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
         (Fullscreen(a), Fullscreen(b)) => a == b,
         (AnyLink(a), AnyLink(b)) => a == b,
         (ReadOnly(a), ReadOnly(b)) => a == b,
-        (ReadWrite(a),ReadWrite(b)) => a == b,
-        (PlaceholderShown(a),PlaceholderShown(b)) => a == b,
-        (Autofill(a),Autofill(b)) => a == b,
+        (ReadWrite(a), ReadWrite(b)) => a == b,
+        (PlaceholderShown(a), PlaceholderShown(b)) => a == b,
+        (Autofill(a), Autofill(b)) => a == b,
         (WebKitScrollbar(a), WebKitScrollbar(b)) => a == b,
         // Local(Box<parcel_selectors::parser::Selector<'i, Selectors>>),
         // Global(Box<parcel_selectors::parser::Selector<'i, Selectors>>),
@@ -198,27 +199,30 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
         // Lang(Vec<CowArcStr<'i>>),
         (Custom(a), Custom(b)) => a == b,
         _ => false,
-      })
-    }
+      }
+    })
+  }
 
   fn match_pseudo_element(&self, pe: &PseudoElement<'i>, _context: &mut MatchingContext<'_, '_, Self::Impl>) -> bool {
     use PseudoElement::*;
     match &self.name {
       // FIXME: this exist because we can't use PartialEq (==) between 2 elements of same lifetime.
-      ElementName::Pseudo(elt) => match(elt, pe) {
-        (After, After) => true,
-        (Before, Before) => true,
-        (FirstLine, FirstLine) => true,
-        (FirstLetter, FirstLetter) => true,
-        (Cue, Cue) => true,
-        (CueRegion, CueRegion) => true,
-        (Marker, Marker) => true,
-        (Selection(a), Selection(b)) => a == b,
-        (Placeholder(a),Placeholder(b)) => a == b,
-        (Backdrop(a),Backdrop(b)) => a == b,
-        (FileSelectorButton(a),FileSelectorButton(b)) => a == b,
-        (WebKitScrollbar(a),WebKitScrollbar(b)) => a == b,
-        _ => false,
+      ElementName::Pseudo(elt) => {
+        match (elt, pe) {
+          (After, After) => true,
+          (Before, Before) => true,
+          (FirstLine, FirstLine) => true,
+          (FirstLetter, FirstLetter) => true,
+          (Cue, Cue) => true,
+          (CueRegion, CueRegion) => true,
+          (Marker, Marker) => true,
+          (Selection(a), Selection(b)) => a == b,
+          (Placeholder(a), Placeholder(b)) => a == b,
+          (Backdrop(a), Backdrop(b)) => a == b,
+          (FileSelectorButton(a), FileSelectorButton(b)) => a == b,
+          (WebKitScrollbar(a), WebKitScrollbar(b)) => a == b,
+          _ => false,
+        }
       },
       _ => false,
     }
