@@ -7,13 +7,15 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use ouroboros::self_referencing;
 
-use anyhow::Result;
+use anyhow::{anyhow, bail, Result};
 
 use log::debug;
 use notify::event::{DataChange, EventKind, ModifyKind};
 use notify::{RecursiveMode, Watcher};
 
 use lightningcss::rules::CssRule;
+use lightningcss::rules::media::MediaRule;
+use lightningcss::media_query::MediaQuery;
 use lightningcss::stylesheet::{StyleSheet, ParserOptions};
 use lightningcss::declaration::DeclarationBlock;
 use lightningcss::parcel_selectors::context::QuirksMode;
@@ -71,7 +73,28 @@ impl<'i> ParserResult {
       let mut rules: Vec<(&Selector<Selectors>, &DeclarationBlock)> = s.rules.0.iter().filter_map(|rule| {
         match rule {
           CssRule::Style(style) => Some(style),
-          _ => None,
+          // MediaRule {
+          //   query: MediaList {
+          //     media_queries: [
+          //       MediaQuery {
+          //         qualifier: None,
+          //         media_type: All,
+          //         condition: Some(Feature(Plain { name: "prefers-color-scheme", value: Ident("dark") }))
+          //       }
+          //     ]
+          //   },
+          //   rules: CssRuleList([CssRule::Style])
+          // }
+          CssRule::Media(MediaRule { query, rules, .. }) => {
+            println!("XXX {:?}", query);
+            for MediaQuery { qualifier, media_type, condition } in &query.media_queries {
+              
+            }
+            None
+          },
+          _ => {
+            None
+          },
         }
       }).map(|style| {
         style.selectors.0.iter().map(|s| {
@@ -206,16 +229,16 @@ pub fn spawn_and_parse(path: PathBuf) -> BgParser {
 
 fn parse(path: &Path) -> Result<ParserResult> {
   let source = std::fs::read_to_string(&path)?;
-  let parser_result = ParserResultBuilder {
+  ParserResultTryBuilder {
     source,
     stylesheet_builder: |source| {
       let options = ParserOptions {
         filename: path.to_string_lossy().to_string(),
         ..ParserOptions::default()
       };
-      StyleSheet::parse(source, options).unwrap()
+      StyleSheet::parse(source, options).map_err(|e| {
+        anyhow!("Parsing error: {}", e)
+      })
     },
-  }.build();
-
-  Ok(parser_result)
+  }.try_build()
 }

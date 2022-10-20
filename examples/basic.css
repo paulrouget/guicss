@@ -10,6 +10,8 @@
   }
 }
 
+@media (os-version: macos) and (os-version: linux), (foo: bar) {
+}
 
 hbox {
   --color_x: red;

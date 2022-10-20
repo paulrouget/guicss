@@ -15,6 +15,9 @@ fn main() {
         println!("Got error: {:?}", e);
         return;
       },
+      Ok(Event::Error(e)) => {
+        println!("Got error: {:?}", e);
+      },
       Ok(Event::Parsed(rules)) => {
         rules.compute(&elt);
         println!("Event: Parsed");
