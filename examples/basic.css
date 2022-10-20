@@ -2,6 +2,10 @@
   * {
     margin: 2px;
   }
+
+  foo {
+    foobar: 1.0;
+  }
 }
 
 @media (os-version: macos) {

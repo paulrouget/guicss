@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use ouroboros::self_referencing;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 
 use log::debug;
 use notify::event::{DataChange, EventKind, ModifyKind};
@@ -23,6 +23,9 @@ use lightningcss::parcel_selectors::matching::{MatchingContext, MatchingMode, ma
 use lightningcss::parcel_selectors::parser::Selector;
 use lightningcss::selector::Selectors;
 use lightningcss::printer::Printer;
+use lightningcss::media_query::Operator;
+use lightningcss::media_query::Qualifier;
+use lightningcss::media_query::{MediaFeature, MediaFeatureValue};
 
 use crate::elements::Element;
 use crate::properties::ComputedProperties;
@@ -72,31 +75,32 @@ impl<'i> ParserResult {
     self.with_stylesheet(|s| {
       let mut rules: Vec<(&Selector<Selectors>, &DeclarationBlock)> = s.rules.0.iter().filter_map(|rule| {
         match rule {
-          CssRule::Style(style) => Some(style),
-          // MediaRule {
-          //   query: MediaList {
-          //     media_queries: [
-          //       MediaQuery {
-          //         qualifier: None,
-          //         media_type: All,
-          //         condition: Some(Feature(Plain { name: "prefers-color-scheme", value: Ident("dark") }))
-          //       }
-          //     ]
-          //   },
-          //   rules: CssRuleList([CssRule::Style])
-          // }
+          CssRule::Style(style) => Some([style].to_vec()),
           CssRule::Media(MediaRule { query, rules, .. }) => {
-            println!("XXX {:?}", query);
-            for MediaQuery { qualifier, media_type, condition } in &query.media_queries {
-              
+            let matches = query.media_queries.iter().any(|MediaQuery { qualifier, media_type: _, condition }| {
+              match qualifier {
+                Some(Qualifier::Not) => !condition.as_ref().map(|c| check_media_query(c)).unwrap_or(true),
+                _ => condition.as_ref().map(|c| check_media_query(c)).unwrap_or(true),
+              }
+            });
+            if matches {
+              // FIXME: only keeping on nesting level of media queries
+              Some(rules.0.iter().filter_map(|r| {
+                match r {
+                  CssRule::Style(style) => Some(style),
+                  _ => None,
+                }
+              }).collect())
+            } else {
+              None
             }
-            None
           },
-          _ => {
+          unknown => {
+            println!("Unsupported: {:?}", unknown);
             None
           },
         }
-      }).map(|style| {
+      }).flatten().map(|style| {
         style.selectors.0.iter().map(|s| {
           (s, &style.declarations)
         })
@@ -242,3 +246,24 @@ fn parse(path: &Path) -> Result<ParserResult> {
     },
   }.try_build()
 }
+
+fn check_media_query(condition: &lightningcss::media_query::MediaCondition<'_>) -> bool {
+  use lightningcss::media_query::MediaCondition::*;
+  match condition {
+    Feature(MediaFeature::Plain { name, value: MediaFeatureValue::Ident(ident) }) => {
+      match name.as_ref() {
+        "os-version" => ident.as_ref() == std::env::consts::OS,
+        "prefers-color-scheme" => ident.as_ref() == "light", // FIXME
+        _ => false,
+      }
+    },
+    Not(cond) => !check_media_query(&cond),
+    Operation(conditions, Operator::And) => conditions.iter().all(check_media_query),
+    Operation(conditions, Operator::Or) => conditions.iter().any(check_media_query),
+    InParens(condition) => check_media_query(condition),
+    _ => { // Unsupported
+      false
+    }
+  }
+}
+
