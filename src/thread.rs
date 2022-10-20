@@ -153,24 +153,22 @@ impl<'i> ParserResult {
           value: tokens,
         }) = prop
         {
-          if let Some(token) = tokens.0.get(0) {
-            if let TokenOrValue::Var(Variable {
-              name: DashedIdentReference { ident: DashedIdent(name), .. },
-              ..
-            }) = token
-            {
-              if let Some(source) = variables.get(name) {
-                if let Ok(prop) = Property::parse_string(id.clone(), source, ParserOptions::default()) {
-                  if let Err(e) = computed.apply(&prop) {
-                    eprintln!("{}", e);
-                  }
-                  continue;
-                } else {
-                  eprintln!("Could not parse `{}` variable content ({}) for property {:?}", name, source, prop);
+          if let Some(TokenOrValue::Var(Variable {
+            name: DashedIdentReference { ident: DashedIdent(name), .. },
+            ..
+          })) = tokens.0.get(0)
+          {
+            if let Some(source) = variables.get(name) {
+              if let Ok(prop) = Property::parse_string(id.clone(), source, ParserOptions::default()) {
+                if let Err(e) = computed.apply(&prop) {
+                  eprintln!("{}", e);
                 }
+                continue;
               } else {
-                eprintln!("Could not resolve variable: {}", name);
+                eprintln!("Could not parse `{}` variable content ({}) for property {:?}", name, source, prop);
               }
+            } else {
+              eprintln!("Could not resolve variable: {}", name);
             }
           }
         }
