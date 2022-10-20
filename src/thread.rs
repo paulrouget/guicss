@@ -1,3 +1,8 @@
+use lightningcss::stylesheet::PrinterOptions;
+use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
+use lightningcss::properties::Property;
+use lightningcss::properties::custom::{CustomProperty, TokenOrValue, UnparsedProperty, Variable, };
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use ouroboros::self_referencing;
@@ -15,6 +20,7 @@ use lightningcss::parcel_selectors::context::QuirksMode;
 use lightningcss::parcel_selectors::matching::{MatchingContext, MatchingMode, matches_selector};
 use lightningcss::parcel_selectors::parser::Selector;
 use lightningcss::selector::Selectors;
+use lightningcss::printer::Printer;
 
 use crate::elements::Element;
 use crate::properties::ComputedProperties;
@@ -57,7 +63,10 @@ pub struct ParserResult {
 
 impl<'i> ParserResult {
   pub fn compute(&self, element: &Element<'i>) {
+
+    let mut variables = HashMap::new();
     let mut computed = ComputedProperties::default();
+
     self.with_stylesheet(|s| {
       let mut rules: Vec<(&Selector<Selectors>, &DeclarationBlock)> = s.rules.0.iter().filter_map(|rule| {
         match rule {
@@ -72,22 +81,58 @@ impl<'i> ParserResult {
       rules.sort_by(|(s1, _), (s2, _)| {
         s1.specificity().cmp(&s2.specificity())
       });
-      rules.iter().filter_map(|(s, decs)| {
-        let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
+
+      let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
+      let (normal, important): (Vec<_>, Vec<_>) = rules.into_iter().filter_map(|(s, decs)| {
         if matches_selector(s, 0, None, &element, &mut context, &mut |_, _| {}) {
-          Some(decs)
+          Some((&decs.declarations, &decs.important_declarations))
         } else {
           None
         }
-      }).for_each(|decs| {
-        // FIXME: support decs.important_declarations
-        for prop in &decs.declarations {
-          if let Err(e) = computed.apply(prop) {
-            eprintln!("{}", e);
+      }).unzip();
+
+      let normal = normal.into_iter().flatten();
+      let important = important.into_iter().flatten();
+
+      let all = normal.chain(important);
+
+      let without_var: Vec<_> = all.filter(|prop| {
+        if let Property::Custom(CustomProperty { name, value: tokens }) = prop {
+          if name.starts_with("--") {
+            let mut source = String::new();
+            let mut printer = Printer::new(&mut source, PrinterOptions::default());
+            tokens.to_css(&mut printer, false).unwrap();
+            variables.insert(name.clone(), source.clone());
+            return false
           }
         }
-        println!("Computed property: {:?}", computed);
-      })
+        true
+      }).collect();
+
+      for prop in without_var {
+        if let Property::Unparsed(UnparsedProperty { property_id: id, value: tokens }) = prop {
+          if let Some(token) = tokens.0.get(0) {
+            if let TokenOrValue::Var(Variable { name: DashedIdentReference { ident: DashedIdent(name), .. }, .. }) = token {
+              if let Some(source) = variables.get(name) {
+                if let Ok(prop) = Property::parse_string(id.clone(), &source, ParserOptions::default()) {
+                  if let Err(e) = computed.apply(&prop) {
+                    eprintln!("{}", e);
+                  }
+                  continue;
+                } else {
+                  eprintln!("Could not parse `{}` variable content ({}) for property {:?}", name, source, prop);
+                }
+              } else {
+                eprintln!("Could not resolve variable: {}", name);
+              }
+            }
+          }
+        }
+        if let Err(e) = computed.apply(&prop) {
+          eprintln!("{}", e);
+        }
+      }
+      println!("Computed property: {:?}", computed);
     })
   }
 }

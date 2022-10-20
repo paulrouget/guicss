@@ -1,6 +1,5 @@
 @media (prefers-color-scheme: dark) {
   * {
-    --color: red;
     margin: 2px;
   }
 }
@@ -13,6 +12,10 @@
 
 
 hbox {
+  --color_x: red;
+  color_xx: 42.0;
+  background-color: var(--color_x);
+  /* background-color: blue; */
   padding-top: 43px;
   padding-bottom: 0;
   padding: 0;
@@ -25,9 +28,8 @@ hbox {
   border: 2px solid red;
   border-width: 2px 3px;
   border-color: #333;
-  border-top-color: rgba(100, 100, 100, 0.2);
+  border-top-color: cyan;
 
-  background-color: blue;
 
   border-radius: 2px;
   foo: 1px;
