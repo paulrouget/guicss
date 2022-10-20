@@ -121,7 +121,7 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
     false
   }
 
-  fn has_local_name(&self, local_name: &SelectorIdent) -> bool {
+  fn has_local_name(&self, local_name: &SelectorIdent<'_>) -> bool {
     if let ElementName::Named(name) = &self.name {
       name == local_name.0.as_ref()
     } else {
@@ -129,7 +129,7 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
     }
   }
 
-  fn has_namespace(&self, _ns: &SelectorIdent) -> bool {
+  fn has_namespace(&self, _ns: &SelectorIdent<'_>) -> bool {
     false
   }
 
@@ -139,7 +139,7 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
     other.name == self.name
   }
 
-  fn attr_matches(&self, _: &NamespaceConstraint<&SelectorIdent>, _local_name: &SelectorIdent, _operation: &AttrSelectorOperation<&SelectorString>) -> bool {
+  fn attr_matches(&self, _: &NamespaceConstraint<&SelectorIdent<'_>>, _local_name: &SelectorIdent<'_>, _operation: &AttrSelectorOperation<&SelectorString<'_>>) -> bool {
     // FIXME
     false
   }
@@ -147,7 +147,7 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
   // ts == tree-structural (fist-child & such)
   fn match_non_ts_pseudo_class<F>(&self, pc: &PseudoClass<'i>, _context: &mut MatchingContext<'_, '_, Self::Impl>, _flags_setter: &mut F) -> bool
   where F: FnMut(&Self, ElementSelectorFlags) {
-    use PseudoClass::*;
+    use PseudoClass::{Active, AnyLink, Autofill, Blank, Buffering, Checked, Current, Custom, Default, Defined, Dir, Disabled, Enabled, Focus, FocusVisible, FocusWithin, Fullscreen, Future, Hover, InRange, Indeterminate, Invalid, Link, LocalLink, Muted, Optional, OutOfRange, Past, Paused, PlaceholderShown, Playing, ReadOnly, ReadWrite, Required, Seeking, Stalled, Target, TargetWithin, UserInvalid, UserValid, Valid, Visited, VolumeLocked, WebKitScrollbar};
     self.pseudo_classes.iter().any(|a| {
       match (a, pc) {
         (Hover, Hover) => true,
@@ -204,7 +204,7 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
   }
 
   fn match_pseudo_element(&self, pe: &PseudoElement<'i>, _context: &mut MatchingContext<'_, '_, Self::Impl>) -> bool {
-    use PseudoElement::*;
+    use PseudoElement::{After, Backdrop, Before, Cue, CueRegion, FileSelectorButton, FirstLetter, FirstLine, Marker, Placeholder, Selection, WebKitScrollbar};
     match &self.name {
       // FIXME: this exist because we can't use PartialEq (==) between 2 elements of same lifetime.
       ElementName::Pseudo(elt) => {
@@ -236,21 +236,21 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
     false
   }
 
-  fn has_id(&self, id: &SelectorIdent, _: CaseSensitivity) -> bool {
+  fn has_id(&self, id: &SelectorIdent<'_>, _: CaseSensitivity) -> bool {
     // Not quirks mode. Always case sensitivie
     self.id.as_ref().map_or(false, |i| i == id.0.as_ref())
   }
 
-  fn has_class(&self, name: &SelectorIdent, _: CaseSensitivity) -> bool {
+  fn has_class(&self, name: &SelectorIdent<'_>, _: CaseSensitivity) -> bool {
     // Not quirks mode. Always case sensitivie
     self.classes.contains(name.0.as_ref())
   }
 
-  fn imported_part(&self, _name: &SelectorIdent) -> Option<SelectorIdent<'i>> {
+  fn imported_part(&self, _name: &SelectorIdent<'_>) -> Option<SelectorIdent<'i>> {
     None
   }
 
-  fn is_part(&self, _name: &SelectorIdent) -> bool {
+  fn is_part(&self, _name: &SelectorIdent<'_>) -> bool {
     false
   }
 

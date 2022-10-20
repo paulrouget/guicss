@@ -33,7 +33,7 @@ pub enum Event {
 }
 
 impl std::fmt::Debug for Event {
-  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       Event::FileChanged => write!(f, "FileChanged"),
       Event::SystemColorChanged => write!(f, "SystemColorChanged"),
@@ -66,7 +66,7 @@ impl<'i> ParserResult {
     let mut computed = ComputedProperties::default();
 
     self.with_stylesheet(|s| {
-      let mut rules: Vec<(&Selector<Selectors>, &DeclarationBlock)> = s
+      let mut rules: Vec<(&Selector<'_, Selectors>, &DeclarationBlock<'_>)> = s
         .rules
         .0
         .iter()
@@ -81,8 +81,8 @@ impl<'i> ParserResult {
                    condition,
                  }| {
                   match qualifier {
-                    Some(Qualifier::Not) => !condition.as_ref().map(|c| check_media_query(c)).unwrap_or(true),
-                    _ => condition.as_ref().map(|c| check_media_query(c)).unwrap_or(true),
+                    Some(Qualifier::Not) => !condition.as_ref().map_or(true, check_media_query),
+                    _ => condition.as_ref().map_or(true, check_media_query),
                   }
                 },
               );
@@ -111,8 +111,7 @@ impl<'i> ParserResult {
           }
         })
         .flatten()
-        .map(|style| style.selectors.0.iter().map(|s| (s, &style.declarations)))
-        .flatten()
+        .flat_map(|style| style.selectors.0.iter().map(|s| (s, &style.declarations)))
         .collect();
       rules.sort_by(|(s1, _), (s2, _)| s1.specificity().cmp(&s2.specificity()));
 
@@ -161,7 +160,7 @@ impl<'i> ParserResult {
             }) = token
             {
               if let Some(source) = variables.get(name) {
-                if let Ok(prop) = Property::parse_string(id.clone(), &source, ParserOptions::default()) {
+                if let Ok(prop) = Property::parse_string(id.clone(), source, ParserOptions::default()) {
                   if let Err(e) = computed.apply(&prop) {
                     eprintln!("{}", e);
                   }
@@ -175,7 +174,7 @@ impl<'i> ParserResult {
             }
           }
         }
-        if let Err(e) = computed.apply(&prop) {
+        if let Err(e) = computed.apply(prop) {
           eprintln!("{}", e);
         }
       }
@@ -267,7 +266,7 @@ fn parse(path: &Path) -> Result<ParserResult> {
 }
 
 fn check_media_query(condition: &lightningcss::media_query::MediaCondition<'_>) -> bool {
-  use lightningcss::media_query::MediaCondition::*;
+  use lightningcss::media_query::MediaCondition::{Feature, InParens, Not, Operation};
   match condition {
     Feature(MediaFeature::Plain {
       name,
@@ -279,7 +278,7 @@ fn check_media_query(condition: &lightningcss::media_query::MediaCondition<'_>) 
         _ => false,
       }
     },
-    Not(cond) => !check_media_query(&cond),
+    Not(cond) => !check_media_query(cond),
     Operation(conditions, Operator::And) => conditions.iter().all(check_media_query),
     Operation(conditions, Operator::Or) => conditions.iter().any(check_media_query),
     InParens(condition) => check_media_query(condition),

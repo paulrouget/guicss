@@ -33,7 +33,7 @@ pub struct ComputedProperties {
 }
 
 impl ComputedProperties {
-  pub fn apply(&mut self, p: &Property) -> Result<()> {
+  pub fn apply(&mut self, p: &Property<'_>) -> Result<()> {
     use lightningcss::properties::border::{BorderColor, BorderSideWidth, BorderWidth, GenericBorder};
     use lightningcss::properties::border_radius::BorderRadius;
     use lightningcss::properties::margin_padding::{Margin, Padding};
@@ -111,10 +111,10 @@ impl ComputedProperties {
         color: c,
       }) => {
         let v = (Some(c.into()), *w);
-        self.border.top = v.clone();
-        self.border.bottom = v.clone();
-        self.border.left = v.clone();
-        self.border.right = v.clone();
+        self.border.top = v;
+        self.border.bottom = v;
+        self.border.left = v;
+        self.border.right = v;
       },
       P::BackgroundColor(c) => {
         self.background_color = Some(c.into());
