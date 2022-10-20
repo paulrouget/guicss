@@ -177,7 +177,7 @@ impl<'i> ParserResult {
         }
       }
       println!("Computed property: {:?}", computed);
-    })
+    });
   }
 }
 
