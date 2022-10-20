@@ -158,6 +158,7 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
       ReadOnly, ReadWrite, Required, Seeking, Stalled, Target, TargetWithin, UserInvalid, UserValid, Valid, Visited, VolumeLocked, WebKitScrollbar,
     };
     self.pseudo_classes.iter().any(|a| {
+      #[allow(clippy::match-same-arms)]
       match (a, pc) {
         (Hover, Hover) => true,
         (Active, Active) => true,
