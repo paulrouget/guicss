@@ -2,24 +2,13 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 use crossbeam_channel::select;
-
-
-
-
-
-
-
-
-
-
 use lightningcss::stylesheet::{ParserOptions, StyleSheet};
-
 use log::debug;
 use ouroboros::self_referencing;
 
 use crate::elements::Element;
 use crate::properties::ComputedProperties;
-use crate::{watchers};
+use crate::watchers;
 
 pub enum Event {
   FileChanged,

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-
 use lightningcss::declaration::DeclarationBlock;
 use lightningcss::media_query::{MediaFeature, MediaFeatureValue, MediaQuery, Operator, Qualifier};
 use lightningcss::parcel_selectors::context::QuirksMode;
@@ -14,8 +13,6 @@ use lightningcss::rules::CssRule;
 use lightningcss::selector::Selectors;
 use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
 use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
-
-
 
 use crate::elements::Element;
 use crate::properties::ComputedProperties;

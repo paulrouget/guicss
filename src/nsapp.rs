@@ -1,6 +1,5 @@
 use objc2::foundation::{MainThreadMarker, NSArray, NSObject, NSString};
 use objc2::rc::{Id, Shared};
-
 use objc2::{extern_class, extern_methods, msg_send_id, ClassType};
 
 extern_class!(

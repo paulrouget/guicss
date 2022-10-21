@@ -2,7 +2,6 @@ use log::error;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoopBuilder};
 
-
 fn main() {
   let event_loop = EventLoopBuilder::with_user_event().build();
   let proxy = event_loop.create_proxy();

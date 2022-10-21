@@ -2,7 +2,6 @@ use std::path::Path;
 
 use anyhow::Result;
 use crossbeam_channel::{unbounded, Receiver};
-
 use notify::event::{DataChange, EventKind, ModifyKind};
 use notify::{FsEventWatcher, RecursiveMode, Watcher as NotifyWatcher};
 
