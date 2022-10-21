@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use objc2::foundation::{MainThreadMarker, NSArray, NSObject, NSString};
 use objc2::rc::{Id, Shared};
 use objc2::{extern_class, extern_methods, msg_send_id, ClassType};
@@ -24,12 +26,8 @@ type NSAppearanceName = NSString;
 
 extern_methods!(
   unsafe impl NSAppearance {
-    pub fn appearanceNamed(name: &NSAppearanceName) -> Id<Self, Shared> {
-      msg_send_id![Self::class(), appearanceNamed: name]
-    }
-
     pub fn bestMatchFromAppearancesWithNames(&self, appearances: &NSArray<NSAppearanceName>) -> Id<NSAppearanceName, Shared> {
-      msg_send_id![self, bestMatchFromAppearancesWithNames: appearances,]
+      unsafe { msg_send_id![self, bestMatchFromAppearancesWithNames: appearances,] }
     }
   }
 );

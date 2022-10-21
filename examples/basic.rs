@@ -1,15 +1,20 @@
 use log::error;
-use winit::event::{Event, WindowEvent};
+use winit::event::{Event as WinitEvent, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoopBuilder};
+
+use bgcss::thread::Event;
+use bgcss::thread::spawn_and_parse;
+use bgcss::elements::Element;
+use bgcss::theme::get_theme;
 
 fn main() {
   let event_loop = EventLoopBuilder::with_user_event().build();
   let proxy = event_loop.create_proxy();
 
   let path = std::path::PathBuf::from("./examples/basic.css");
-  let elt = bgcss::Element::named("hbox");
+  let elt = Element::named("hbox");
 
-  bgcss::parse(path, move |event| {
+  spawn_and_parse(path, move |event| {
     if let Err(e) = proxy.send_event(event) {
       error!("Sending user event failed: {}", e);
     }
@@ -18,13 +23,14 @@ fn main() {
   event_loop.run(move |event, _, control_flow| {
     *control_flow = ControlFlow::Wait;
     match event {
-      Event::UserEvent(event) => {
+      WinitEvent::UserEvent(event) => {
         match event {
-          bgcss::Event::Error(e) => {
+          Event::Error(e) => {
             println!("Got error: {:?}", e);
           },
-          bgcss::Event::Parsed(rules) => {
-            rules.compute(&elt);
+          Event::Parsed(rules) => {
+            let theme = get_theme();
+            rules.compute(&elt, theme);
             println!("Event: Parsed");
           },
           event => {
@@ -32,7 +38,7 @@ fn main() {
           },
         }
       },
-      Event::WindowEvent {
+      WinitEvent::WindowEvent {
         event: WindowEvent::CloseRequested,
         window_id: _,
       } => *control_flow = ControlFlow::Exit,

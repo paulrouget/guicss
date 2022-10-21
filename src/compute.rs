@@ -14,10 +14,11 @@ use lightningcss::selector::Selectors;
 use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
 use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
 
+use crate::theme::Theme;
 use crate::elements::Element;
 use crate::properties::ComputedProperties;
 
-pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>) -> ComputedProperties {
+pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>, theme: Theme) -> ComputedProperties {
   let mut variables = HashMap::new();
   let mut computed = ComputedProperties::default();
   let mut rules: Vec<(&Selector<'_, Selectors>, &DeclarationBlock<'_>)> = stylesheet
@@ -35,8 +36,8 @@ pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>) -> Comput
                condition,
              }| {
               match qualifier {
-                Some(Qualifier::Not) => !condition.as_ref().map_or(true, check_media_query),
-                _ => condition.as_ref().map_or(true, check_media_query),
+                Some(Qualifier::Not) => !condition.as_ref().map_or(true, |c| check_media_query(c, theme)),
+                _ => condition.as_ref().map_or(true, |c| check_media_query(c, theme)),
               }
             },
           );
@@ -133,7 +134,7 @@ pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>) -> Comput
   computed
 }
 
-fn check_media_query(condition: &lightningcss::media_query::MediaCondition<'_>) -> bool {
+fn check_media_query(condition: &lightningcss::media_query::MediaCondition<'_>, theme: Theme) -> bool {
   use lightningcss::media_query::MediaCondition::{Feature, InParens, Not, Operation};
   match condition {
     Feature(MediaFeature::Plain {
@@ -142,14 +143,18 @@ fn check_media_query(condition: &lightningcss::media_query::MediaCondition<'_>) 
     }) => {
       match name.as_ref() {
         "os-version" => ident.as_ref() == std::env::consts::OS,
-        "prefers-color-scheme" => ident.as_ref() == "light", // FIXME
+        "prefers-color-scheme" => match (ident.as_ref(), theme) {
+          ("light", Theme::Light) => true,
+          ("dark", Theme::Dark) => true,
+          _ => false,
+        }
         _ => false,
       }
     },
-    Not(cond) => !check_media_query(cond),
-    Operation(conditions, Operator::And) => conditions.iter().all(check_media_query),
-    Operation(conditions, Operator::Or) => conditions.iter().any(check_media_query),
-    InParens(condition) => check_media_query(condition),
+    Not(cond) => !check_media_query(cond, theme),
+    Operation(conditions, Operator::And) => conditions.iter().all(|c| check_media_query(c, theme)),
+    Operation(conditions, Operator::Or) => conditions.iter().any(|c| check_media_query(c, theme)),
+    InParens(condition) => check_media_query(condition, theme),
     _ => {
       // Unsupported
       false

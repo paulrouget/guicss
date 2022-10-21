@@ -38,8 +38,8 @@ pub struct ParserResult {
 }
 
 impl<'i> ParserResult {
-  pub fn compute(&self, element: &Element<'i>) -> ComputedProperties {
-    self.with_stylesheet(|s| crate::compute::compute(s, element))
+  pub fn compute(&self, element: &Element<'i>, theme: crate::theme::Theme) -> ComputedProperties {
+    self.with_stylesheet(|s| crate::compute::compute(s, element, theme))
   }
 }
 

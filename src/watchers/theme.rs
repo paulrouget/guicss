@@ -3,7 +3,7 @@ use std::ptr;
 use anyhow::{bail, Result};
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use log::error;
-use objc2::foundation::{NSArray, NSObject, NSString};
+use objc2::foundation::{NSObject, NSString};
 use objc2::rc::{Id, Shared};
 use objc2::runtime::Object;
 use objc2::{class, declare_class, msg_send, msg_send_id, sel, ClassType};
@@ -56,28 +56,8 @@ pub struct Watcher {
 }
 
 #[derive(Debug)]
-pub enum Theme {
-  Dark,
-  Light,
-}
-
-#[derive(Debug)]
 pub enum Event {
   Changed,
-}
-
-pub fn get_theme() -> Theme {
-  // FIXME: ensure this runs in main thread
-  let app = crate::nsapp::NSApp();
-  let appearance = app.effectiveAppearance();
-  let name = appearance.bestMatchFromAppearancesWithNames(&NSArray::from_slice(&[
-    NSString::from_str("NSAppearanceNameAqua"),
-    NSString::from_str("NSAppearanceNameDarkAqua"),
-  ]));
-  match &*name.to_string() {
-    "NSAppearanceNameDarkAqua" => Theme::Dark,
-    _ => Theme::Light,
-  }
 }
 
 pub fn watch() -> Result<Watcher> {
