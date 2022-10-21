@@ -1,9 +1,7 @@
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use crossbeam_channel::{unbounded, Receiver, Sender, select};
+use crossbeam_channel::select;
 
 use anyhow::{anyhow, Result};
-use lightningcss::declaration::DeclarationBlock;
 use lightningcss::media_query::{MediaFeature, MediaFeatureValue, MediaQuery, Operator, Qualifier};
 use lightningcss::parcel_selectors::context::QuirksMode;
 use lightningcss::parcel_selectors::matching::{matches_selector, MatchingContext, MatchingMode};
@@ -61,16 +59,14 @@ impl<'i> ParserResult {
   }
 }
 
-pub fn spawn_and_parse(path: PathBuf) -> Receiver<Event> {
-  let (to_main, from_css_thread) = unbounded();
-
+pub fn spawn_and_parse<F>(path: PathBuf, cb: F) where F: Fn(Event) + Send + 'static {
   std::thread::spawn(move || {
     debug!("CSS thread spawned");
 
     let theme = match watchers::theme() {
       Ok(w) => w,
       Err(e) => {
-        send(&to_main, Event::Error(e.to_string()));
+        cb(Event::Error(e.to_string()));
         return;
       },
     };
@@ -78,14 +74,14 @@ pub fn spawn_and_parse(path: PathBuf) -> Receiver<Event> {
     let file = match watchers::file(&path) {
       Ok(w) => w,
       Err(e) => {
-        send(&to_main, Event::Error(e.to_string()));
+        cb(Event::Error(e.to_string()));
         return;
       },
     };
 
     match parse(&path) {
-      Ok(stylesheet) => send(&to_main, Event::Parsed(stylesheet)),
-      Err(e) => send(&to_main, Event::Error(e.to_string())),
+      Ok(stylesheet) => cb(Event::Parsed(stylesheet)),
+      Err(e) => cb(Event::Error(e.to_string())),
     }
 
     loop {
@@ -93,35 +89,33 @@ pub fn spawn_and_parse(path: PathBuf) -> Receiver<Event> {
         recv(theme.recv) -> e => {
           match e {
             Ok(watchers::ThemeEvent::Changed) => {
-              send(&to_main, Event::ThemeChanged);
+              cb(Event::ThemeChanged);
             },
             Err(e) => {
-              send(&to_main, Event::Error(e.to_string()));
+              cb(Event::Error(e.to_string()));
             }
           }
         },
         recv(file.recv) -> e => {
           match e {
             Ok(watchers::FileEvent::Changed) => {
-              send(&to_main, Event::FileChanged);
+              cb(Event::FileChanged);
               match parse(&path) {
-                Ok(stylesheet) => send(&to_main, Event::Parsed(stylesheet)),
-                Err(e) => send(&to_main, Event::Error(e.to_string())),
+                Ok(stylesheet) => cb(Event::Parsed(stylesheet)),
+                Err(e) => cb(Event::Error(e.to_string())),
               }
             },
             Ok(watchers::FileEvent::Error(e)) => {
-              send(&to_main, Event::Error(e));
+              cb(Event::Error(e));
             },
             Err(e) => {
-              send(&to_main, Event::Error(e.to_string()));
+              cb(Event::Error(e.to_string()));
             }
           }
         },
       }
     }
   });
-
-  from_css_thread
 }
 
 fn parse(path: &Path) -> Result<ParserResult> {
