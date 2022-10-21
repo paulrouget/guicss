@@ -33,7 +33,7 @@ declare_class!(
               selector: sel!(effectiveAppearanceDidChange:)
               name: &*notification_name
               object: ptr::null::<Object>()
-          ];
+          ]
         };
         this
       })
