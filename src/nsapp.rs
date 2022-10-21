@@ -25,11 +25,11 @@ type NSAppearanceName = NSString;
 extern_methods!(
   unsafe impl NSAppearance {
     pub fn appearanceNamed(name: &NSAppearanceName) -> Id<Self, Shared> {
-      unsafe { msg_send_id![Self::class(), appearanceNamed: name] }
+      msg_send_id![Self::class(), appearanceNamed: name]
     }
 
     pub fn bestMatchFromAppearancesWithNames(&self, appearances: &NSArray<NSAppearanceName>) -> Id<NSAppearanceName, Shared> {
-      unsafe { msg_send_id![self, bestMatchFromAppearancesWithNames: appearances,] }
+      msg_send_id![self, bestMatchFromAppearancesWithNames: appearances,]
     }
   }
 );
