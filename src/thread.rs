@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{channel, Receiver, Sender};
+use crossbeam_channel::{unbounded, Receiver, Sender, select};
 
 use anyhow::{anyhow, Result};
 use lightningcss::declaration::DeclarationBlock;
@@ -17,8 +17,6 @@ use lightningcss::selector::Selectors;
 use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
 use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
 use log::debug;
-use notify::event::{DataChange, EventKind, ModifyKind};
-use notify::{RecursiveMode, Watcher};
 use ouroboros::self_referencing;
 
 use crate::elements::Element;
@@ -41,11 +39,6 @@ impl std::fmt::Debug for Event {
       Event::Error(_) => write!(f, "Error"),
     }
   }
-}
-
-enum WatcherEvent {
-  FileChanged,
-  Error(String),
 }
 
 pub struct BgParser {
@@ -188,27 +181,12 @@ fn send<T>(sender: &Sender<T>, event: T) {
 }
 
 pub fn spawn_and_parse(path: PathBuf) -> BgParser {
-  let (to_main, from_css_thread) = channel();
+  let (to_main, from_css_thread) = unbounded();
 
   std::thread::spawn(move || {
     debug!("CSS thread spawned");
 
-    let (to_css_thread, from_watcher_thread) = channel();
-
-    let watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
-      match res {
-        Ok(e) => {
-          if matches!(e.kind, EventKind::Modify(ModifyKind::Data(DataChange::Content))) {
-            send(&to_css_thread, WatcherEvent::FileChanged);
-          }
-        },
-        Err(e) => {
-          send(&to_css_thread, WatcherEvent::Error(e.to_string()));
-        },
-      }
-    });
-
-    let mut watcher = match watcher {
+    let theme = match crate::watchers::theme() {
       Ok(w) => w,
       Err(e) => {
         send(&to_main, Event::Error(e.to_string()));
@@ -216,9 +194,13 @@ pub fn spawn_and_parse(path: PathBuf) -> BgParser {
       },
     };
 
-    if let Err(e) = watcher.watch(&path, RecursiveMode::NonRecursive) {
-      send(&to_main, Event::Error(e.to_string()));
-    }
+    let file = match crate::watchers::file(&path) {
+      Ok(w) => w,
+      Err(e) => {
+        send(&to_main, Event::Error(e.to_string()));
+        return;
+      },
+    };
 
     match parse(&path) {
       Ok(stylesheet) => send(&to_main, Event::Parsed(stylesheet)),
@@ -226,22 +208,30 @@ pub fn spawn_and_parse(path: PathBuf) -> BgParser {
     }
 
     loop {
-      let event = from_watcher_thread.recv();
-      match event {
-        Ok(WatcherEvent::FileChanged) => {
-          send(&to_main, Event::FileChanged);
-          match parse(&path) {
-            Ok(stylesheet) => send(&to_main, Event::Parsed(stylesheet)),
-            Err(e) => send(&to_main, Event::Error(e.to_string())),
-          }
+      select! {
+        recv(theme.recv) -> e => {
+          println!("Event from theme: {:?}", e);
         },
-        Ok(WatcherEvent::Error(e)) => {
-          send(&to_main, Event::Error(e));
-        },
-        Err(e) => {
-          send(&to_main, Event::Error(e.to_string()));
+        recv(file.recv) -> e => {
+          println!("Event from file: {:?}", e);
         },
       }
+      // let event = from_file_watcher_thread.recv();
+      // match event {
+      //   Ok(WatcherEvent::FileChanged) => {
+      //     send(&to_main, Event::FileChanged);
+      //     match parse(&path) {
+      //       Ok(stylesheet) => send(&to_main, Event::Parsed(stylesheet)),
+      //       Err(e) => send(&to_main, Event::Error(e.to_string())),
+      //     }
+      //   },
+      //   Ok(WatcherEvent::Error(e)) => {
+      //     send(&to_main, Event::Error(e));
+      //   },
+      //   Err(e) => {
+      //     send(&to_main, Event::Error(e.to_string()));
+      //   },
+      // }
     }
   });
 

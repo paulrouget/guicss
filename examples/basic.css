@@ -1,10 +1,7 @@
+
 @media (prefers-color-scheme: dark) {
   * {
     margin: 2px;
-  }
-
-  foo {
-    foobar: 1.0;
   }
 }
 
