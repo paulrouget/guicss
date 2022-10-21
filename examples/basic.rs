@@ -1,11 +1,9 @@
+use bgcss::elements::Element;
+use bgcss::theme::get_theme;
+use bgcss::thread::{spawn_and_parse, Event};
 use log::error;
 use winit::event::{Event as WinitEvent, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoopBuilder};
-
-use bgcss::thread::Event;
-use bgcss::thread::spawn_and_parse;
-use bgcss::elements::Element;
-use bgcss::theme::get_theme;
 
 fn main() {
   let event_loop = EventLoopBuilder::with_user_event().build();

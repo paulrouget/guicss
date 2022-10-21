@@ -14,9 +14,9 @@ use lightningcss::selector::Selectors;
 use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
 use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
 
-use crate::theme::Theme;
 use crate::elements::Element;
 use crate::properties::ComputedProperties;
+use crate::theme::Theme;
 
 pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>, theme: Theme) -> ComputedProperties {
   let mut variables = HashMap::new();
@@ -143,11 +143,13 @@ fn check_media_query(condition: &lightningcss::media_query::MediaCondition<'_>, 
     }) => {
       match name.as_ref() {
         "os-version" => ident.as_ref() == std::env::consts::OS,
-        "prefers-color-scheme" => match (ident.as_ref(), theme) {
-          ("light", Theme::Light) => true,
-          ("dark", Theme::Dark) => true,
-          _ => false,
-        }
+        "prefers-color-scheme" => {
+          match (ident.as_ref(), theme) {
+            ("light", Theme::Light) => true,
+            ("dark", Theme::Dark) => true,
+            _ => false,
+          }
+        },
         _ => false,
       }
     },
