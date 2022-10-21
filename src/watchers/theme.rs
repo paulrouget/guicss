@@ -6,7 +6,7 @@ use log::error;
 use objc2::foundation::{NSArray, NSObject, NSString};
 use objc2::rc::{Id, Shared};
 use objc2::runtime::Object;
-use objc2::{class, declare_class, extern_class, msg_send, msg_send_id, sel, ClassType};
+use objc2::{class, declare_class, msg_send, msg_send_id, sel, ClassType};
 
 // FIXME: lame. Should be attached to the Delegate.
 static mut SENDER: Option<Sender<Event>> = None;

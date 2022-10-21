@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::{anyhow, Result};
+
 use lightningcss::declaration::DeclarationBlock;
 use lightningcss::media_query::{MediaFeature, MediaFeatureValue, MediaQuery, Operator, Qualifier};
 use lightningcss::parcel_selectors::context::QuirksMode;
@@ -14,13 +14,13 @@ use lightningcss::rules::CssRule;
 use lightningcss::selector::Selectors;
 use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
 use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
-use log::debug;
-use ouroboros::self_referencing;
+
+
 
 use crate::elements::Element;
 use crate::properties::ComputedProperties;
 
-pub fn compute(stylesheet: &StyleSheet, element: &Element) -> ComputedProperties {
+pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>) -> ComputedProperties {
   let mut variables = HashMap::new();
   let mut computed = ComputedProperties::default();
   let mut rules: Vec<(&Selector<'_, Selectors>, &DeclarationBlock<'_>)> = stylesheet

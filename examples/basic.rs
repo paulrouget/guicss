@@ -1,7 +1,7 @@
 use log::error;
 use winit::event::{Event, WindowEvent};
-use winit::event_loop::{ControlFlow, EventLoop, EventLoopBuilder};
-use winit::window::WindowBuilder;
+use winit::event_loop::{ControlFlow, EventLoopBuilder};
+
 
 fn main() {
   let event_loop = EventLoopBuilder::with_user_event().build();
@@ -10,7 +10,7 @@ fn main() {
   let path = std::path::PathBuf::from("./examples/basic.css");
   let elt = bgcss::Element::named("hbox");
 
-  let parser = bgcss::parse(path, move |event| {
+  bgcss::parse(path, move |event| {
     if let Err(e) = proxy.send_event(event) {
       error!("Sending user event failed: {}", e);
     }
@@ -35,7 +35,7 @@ fn main() {
       },
       Event::WindowEvent {
         event: WindowEvent::CloseRequested,
-        window_id,
+        window_id: _,
       } => *control_flow = ControlFlow::Exit,
       _ => (),
     }

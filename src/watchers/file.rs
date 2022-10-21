@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use anyhow::Result;
-use crossbeam_channel::{unbounded, Receiver, Sender};
-use log::error;
+use crossbeam_channel::{unbounded, Receiver};
+
 use notify::event::{DataChange, EventKind, ModifyKind};
 use notify::{FsEventWatcher, RecursiveMode, Watcher as NotifyWatcher};
 
@@ -34,7 +34,7 @@ pub fn watch(path: &Path) -> Result<Watcher> {
     }
   })?;
 
-  watcher.watch(&path, RecursiveMode::NonRecursive)?;
+  watcher.watch(path, RecursiveMode::NonRecursive)?;
   Ok(Watcher {
     _inner: watcher,
     recv: from_this_thread,
