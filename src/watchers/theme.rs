@@ -1,21 +1,19 @@
-use crossbeam_channel::{unbounded, Receiver, Sender};
-use anyhow::{bail, Result};
-use log::error;
-
 use std::ptr;
-use objc2::foundation::{NSArray, NSString};
+
+use anyhow::{bail, Result};
+use crossbeam_channel::{unbounded, Receiver, Sender};
+use log::error;
+use objc2::foundation::{NSArray, NSObject, NSString};
 use objc2::rc::{Id, Shared};
 use objc2::runtime::Object;
-use objc2::foundation::NSObject;
 use objc2::{class, declare_class, extern_class, msg_send, msg_send_id, sel, ClassType};
 
 // FIXME: lame. Should be attached to the Delegate.
 static mut SENDER: Option<Sender<Event>> = None;
 
 declare_class!(
-
   #[derive(Debug)]
-  pub(crate) struct Delegate { }
+  pub(crate) struct Delegate {}
 
   unsafe impl ClassType for Delegate {
     type Super = NSObject;
@@ -26,9 +24,7 @@ declare_class!(
     fn init_watcher(&mut self) -> Option<&mut Self> {
       let this: Option<&mut Self> = unsafe { msg_send![self, init] };
       this.map(|this| {
-        let notification_center: Id<Object, Shared> = unsafe {
-          msg_send_id![class!(NSDistributedNotificationCenter), defaultCenter]
-        };
+        let notification_center: Id<Object, Shared> = unsafe { msg_send_id![class!(NSDistributedNotificationCenter), defaultCenter] };
         let notification_name = NSString::from_str("AppleInterfaceThemeChangedNotification");
         let _: () = unsafe {
           msg_send![
@@ -52,7 +48,6 @@ declare_class!(
       }
     }
   }
-
 );
 
 pub struct Watcher {
@@ -75,11 +70,10 @@ pub fn get_theme() -> Theme {
   // FIXME: ensure this runs in main thread
   let app = crate::nsapp::NSApp();
   let appearance = app.effectiveAppearance();
-  let name = appearance.bestMatchFromAppearancesWithNames(
-    &NSArray::from_slice(&[
-                         NSString::from_str("NSAppearanceNameAqua"),
-                         NSString::from_str("NSAppearanceNameDarkAqua")
-    ]));
+  let name = appearance.bestMatchFromAppearancesWithNames(&NSArray::from_slice(&[
+    NSString::from_str("NSAppearanceNameAqua"),
+    NSString::from_str("NSAppearanceNameDarkAqua"),
+  ]));
   match &*name.to_string() {
     "NSAppearanceNameDarkAqua" => Theme::Dark,
     _ => Theme::Light,
@@ -87,7 +81,6 @@ pub fn get_theme() -> Theme {
 }
 
 pub fn watch() -> Result<Watcher> {
-
   let (to_parent_thread, from_this_thread) = unbounded();
 
   unsafe {
@@ -97,12 +90,7 @@ pub fn watch() -> Result<Watcher> {
     SENDER = Some(to_parent_thread);
   }
 
-  let watcher = unsafe {
-    msg_send_id![
-      msg_send_id![Delegate::class(), alloc],
-      init_watcher
-    ]
-  };
+  let watcher = unsafe { msg_send_id![msg_send_id![Delegate::class(), alloc], init_watcher] };
 
   Ok(Watcher {
     _inner: watcher,

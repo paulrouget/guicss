@@ -1,14 +1,12 @@
 use std::path::Path;
-use crossbeam_channel::{unbounded, Receiver, Sender};
-use log::error;
-
-use crate::infallible_send as send;
 
 use anyhow::Result;
-
+use crossbeam_channel::{unbounded, Receiver, Sender};
+use log::error;
 use notify::event::{DataChange, EventKind, ModifyKind};
-use notify::{RecursiveMode, FsEventWatcher};
-use notify::Watcher as NotifyWatcher;
+use notify::{FsEventWatcher, RecursiveMode, Watcher as NotifyWatcher};
+
+use crate::infallible_send as send;
 
 pub struct Watcher {
   _inner: FsEventWatcher,

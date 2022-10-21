@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
-use crossbeam_channel::select;
 
 use anyhow::{anyhow, Result};
+use crossbeam_channel::select;
 use lightningcss::media_query::{MediaFeature, MediaFeatureValue, MediaQuery, Operator, Qualifier};
 use lightningcss::parcel_selectors::context::QuirksMode;
 use lightningcss::parcel_selectors::matching::{matches_selector, MatchingContext, MatchingMode};
@@ -17,12 +17,9 @@ use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
 use log::debug;
 use ouroboros::self_referencing;
 
-use crate::infallible_send as send;
-
 use crate::elements::Element;
 use crate::properties::ComputedProperties;
-
-use crate::watchers;
+use crate::{infallible_send as send, watchers};
 
 pub enum Event {
   FileChanged,
@@ -53,13 +50,12 @@ pub struct ParserResult {
 
 impl<'i> ParserResult {
   pub fn compute(&self, element: &Element<'i>) -> ComputedProperties {
-    self.with_stylesheet(|s| {
-      crate::compute::compute(s, element)
-    })
+    self.with_stylesheet(|s| crate::compute::compute(s, element))
   }
 }
 
-pub fn spawn_and_parse<F>(path: PathBuf, cb: F) where F: Fn(Event) + Send + 'static {
+pub fn spawn_and_parse<F>(path: PathBuf, cb: F)
+where F: Fn(Event) + Send + 'static {
   std::thread::spawn(move || {
     debug!("CSS thread spawned");
 

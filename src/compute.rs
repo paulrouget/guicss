@@ -1,6 +1,5 @@
-use crate::elements::Element;
-use crate::properties::ComputedProperties;
 use std::collections::HashMap;
+
 use anyhow::{anyhow, Result};
 use lightningcss::declaration::DeclarationBlock;
 use lightningcss::media_query::{MediaFeature, MediaFeatureValue, MediaQuery, Operator, Qualifier};
@@ -18,6 +17,9 @@ use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
 use log::debug;
 use ouroboros::self_referencing;
 
+use crate::elements::Element;
+use crate::properties::ComputedProperties;
+
 pub fn compute(stylesheet: &StyleSheet, element: &Element) -> ComputedProperties {
   let mut variables = HashMap::new();
   let mut computed = ComputedProperties::default();
@@ -31,30 +33,30 @@ pub fn compute(stylesheet: &StyleSheet, element: &Element) -> ComputedProperties
         CssRule::Media(MediaRule { query, rules, .. }) => {
           let matches = query.media_queries.iter().any(
             |MediaQuery {
-              qualifier,
-              media_type: _,
-              condition,
-            }| {
+               qualifier,
+               media_type: _,
+               condition,
+             }| {
               match qualifier {
                 Some(Qualifier::Not) => !condition.as_ref().map_or(true, check_media_query),
                 _ => condition.as_ref().map_or(true, check_media_query),
               }
             },
-            );
+          );
           if matches {
             // FIXME: only keeping on nesting level of media queries
             Some(
               rules
-              .0
-              .iter()
-              .filter_map(|r| {
-                match r {
-                  CssRule::Style(style) => Some(style),
-                  _ => None,
-                }
-              })
-              .collect(),
-              )
+                .0
+                .iter()
+                .filter_map(|r| {
+                  match r {
+                    CssRule::Style(style) => Some(style),
+                    _ => None,
+                  }
+                })
+                .collect(),
+            )
           } else {
             None
           }
@@ -65,22 +67,22 @@ pub fn compute(stylesheet: &StyleSheet, element: &Element) -> ComputedProperties
         },
       }
     })
-  .flatten()
+    .flatten()
     .flat_map(|style| style.selectors.0.iter().map(|s| (s, &style.declarations)))
     .collect();
   rules.sort_by(|(s1, _), (s2, _)| s1.specificity().cmp(&s2.specificity()));
 
   let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
   let (normal, important): (Vec<_>, Vec<_>) = rules
-                            .into_iter()
-                            .filter_map(|(s, decs)| {
-                              if matches_selector(s, 0, None, &element, &mut context, &mut |_, _| {}) {
-                                Some((&decs.declarations, &decs.important_declarations))
-                              } else {
-                                None
-                              }
-                            })
-  .unzip();
+    .into_iter()
+    .filter_map(|(s, decs)| {
+      if matches_selector(s, 0, None, &element, &mut context, &mut |_, _| {}) {
+        Some((&decs.declarations, &decs.important_declarations))
+      } else {
+        None
+      }
+    })
+    .unzip();
 
   let normal = normal.into_iter().flatten();
   let important = important.into_iter().flatten();
@@ -100,7 +102,7 @@ pub fn compute(stylesheet: &StyleSheet, element: &Element) -> ComputedProperties
       }
       true
     })
-  .collect();
+    .collect();
 
   for prop in without_var {
     if let Property::Unparsed(UnparsedProperty {
