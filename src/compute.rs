@@ -1,7 +1,5 @@
 use std::collections::HashMap;
-use log::warn;
 
-use lightningcss::rules::style::StyleRule;
 use lightningcss::declaration::DeclarationBlock;
 use lightningcss::media_query::{MediaFeature, MediaFeatureValue, Operator, Qualifier};
 use lightningcss::parcel_selectors::context::QuirksMode;
@@ -11,10 +9,12 @@ use lightningcss::printer::Printer;
 use lightningcss::properties::custom::{CustomProperty, TokenOrValue, UnparsedProperty, Variable};
 use lightningcss::properties::Property;
 use lightningcss::rules::media::MediaRule;
+use lightningcss::rules::style::StyleRule;
 use lightningcss::rules::CssRule;
 use lightningcss::selector::Selectors;
 use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
 use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
+use log::warn;
 
 use crate::elements::Element;
 use crate::properties::ComputedProperties;
@@ -60,19 +60,20 @@ pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>, theme: Th
 
   let mut variables = HashMap::new();
 
-  let without_var: Vec<_> = matching.filter(|prop| {
-    if let Property::Custom(CustomProperty { name, value: tokens }) = prop {
-      if name.starts_with("--") {
-        let mut source = String::new();
-        let mut printer = Printer::new(&mut source, PrinterOptions::default());
-        tokens.to_css(&mut printer, false).unwrap();
-        variables.insert(name.clone(), source.clone());
-        return false;
+  let without_var: Vec<_> = matching
+    .filter(|prop| {
+      if let Property::Custom(CustomProperty { name, value: tokens }) = prop {
+        if name.starts_with("--") {
+          let mut source = String::new();
+          let mut printer = Printer::new(&mut source, PrinterOptions::default());
+          tokens.to_css(&mut printer, false).unwrap();
+          variables.insert(name.clone(), source.clone());
+          return false;
+        }
       }
-    }
-    true
-  })
-  .collect();
+      true
+    })
+    .collect();
 
   for prop in without_var {
     if let Property::Unparsed(UnparsedProperty {
@@ -107,13 +108,16 @@ pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>, theme: Th
 }
 
 fn compute_media_queries<'i, 'a>(media: &'a MediaRule<'i>, theme: Theme) -> Vec<&'a StyleRule<'i>> {
-  let matches = media.query.media_queries.iter().any(|m| match m.qualifier {
-    Some(Qualifier::Not) => !m.condition.as_ref().map_or(true, |c| does_query_match(c, theme)),
-    _ => m.condition.as_ref().map_or(true, |c| does_query_match(c, theme)),
+  let matches = media.query.media_queries.iter().any(|m| {
+    match m.qualifier {
+      Some(Qualifier::Not) => !m.condition.as_ref().map_or(true, |c| does_query_match(c, theme)),
+      _ => m.condition.as_ref().map_or(true, |c| does_query_match(c, theme)),
+    }
   });
   if matches {
     // FIXME: only keeping on nesting level of media queries
-    media.rules
+    media
+      .rules
       .0
       .iter()
       .filter_map(|r| {
@@ -122,9 +126,9 @@ fn compute_media_queries<'i, 'a>(media: &'a MediaRule<'i>, theme: Theme) -> Vec<
           _ => None,
         }
       })
-    .collect()
+      .collect()
   } else {
-    vec!()
+    vec![]
   }
 }
 
