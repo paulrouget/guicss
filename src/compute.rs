@@ -17,47 +17,48 @@ use crate::properties::ComputedProperties;
 use crate::theme::Theme;
 
 pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>, theme: Theme) -> ComputedProperties {
-
   // Iterator over all the rules, including rules under matching MediaQueries
   let rules_iter = stylesheet.rules.0.iter();
-  let mut all_rules: Vec<_> = rules_iter.map(|rule| {
-    match rule {
-      CssRule::Style(style) => [style].to_vec(),
-      CssRule::Media(m) => compute_media_queries(m, theme),
-      unknown => {
-        warn!("Unsupported CSS Rule: {:?}", unknown);
-        vec![]
-      },
-    }
-  }).flatten().flat_map(|style| {
-    style.selectors.0.iter().map(|s| (s, &style.declarations))
-  }).collect();
+  let mut all_rules: Vec<_> = rules_iter
+    .map(|rule| {
+      match rule {
+        CssRule::Style(style) => [style].to_vec(),
+        CssRule::Media(m) => compute_media_queries(m, theme),
+        unknown => {
+          warn!("Unsupported CSS Rule: {:?}", unknown);
+          vec![]
+        },
+      }
+    })
+    .flatten()
+    .flat_map(|style| style.selectors.0.iter().map(|s| (s, &style.declarations)))
+    .collect();
 
   // Sort all rules by specificity.
-  all_rules.sort_by(|(s1, _), (s2, _)| {
-    s1.specificity().cmp(&s2.specificity())
-  });
+  all_rules.sort_by(|(s1, _), (s2, _)| s1.specificity().cmp(&s2.specificity()));
 
   // Only keep Vec<declarations> of matching rules
   let mut ctx = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
   let matching: (Vec<_>, Vec<_>) = all_rules
     .into_iter()
     .filter_map(|(s, decs)| {
-      if matches_selector(s, 0, None, &element, &mut ctx , &mut |_, _| {}) {
+      if matches_selector(s, 0, None, &element, &mut ctx, &mut |_, _| {}) {
         Some((&decs.declarations, &decs.important_declarations))
       } else {
         None
       }
     })
-  .unzip();
+    .unzip();
 
-  // Flatten the declarations and sort them with important declarations are at the end.
+  // Flatten the declarations and sort them with important declarations are at the
+  // end.
   let (normal_matching, important_matching) = matching;
   let normal_matching = normal_matching.into_iter().flatten();
   let important_matching = important_matching.into_iter().flatten();
   let matching = normal_matching.chain(important_matching);
 
-  // Declarations are not sort from least specific to more specific, with importants at the end.
+  // Declarations are not sort from least specific to more specific, with
+  // importants at the end.
 
   let mut variables = HashMap::new();
 
@@ -76,7 +77,7 @@ pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>, theme: Th
       }
       true
     })
-  .collect();
+    .collect();
 
   let mut computed = ComputedProperties::default();
 
@@ -118,12 +119,14 @@ fn compute_media_queries<'i, 'a>(media: &'a MediaRule<'i>, theme: Theme) -> Vec<
   if matches {
     let rules_iter = media.rules.0.iter();
     // FIXME: only keeping on nesting level of media queries
-    rules_iter.filter_map(|r| {
-      match r {
-        CssRule::Style(style) => Some(style),
-        _ => None,
-      }
-    }).collect()
+    rules_iter
+      .filter_map(|r| {
+        match r {
+          CssRule::Style(style) => Some(style),
+          _ => None,
+        }
+      })
+      .collect()
   } else {
     vec![]
   }
