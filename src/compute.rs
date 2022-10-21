@@ -1,3 +1,5 @@
+// FIXME: warnings should be sent back instead of printed.
+
 use std::collections::HashMap;
 
 use lightningcss::media_query::{MediaFeature, MediaFeatureValue, Operator, Qualifier};
@@ -20,7 +22,7 @@ pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>, theme: Th
   // Iterator over all the rules, including rules under matching MediaQueries
   let rules_iter = stylesheet.rules.0.iter();
   let mut all_rules: Vec<_> = rules_iter
-    .map(|rule| {
+    .flat_map(|rule| {
       match rule {
         CssRule::Style(style) => [style].to_vec(),
         CssRule::Media(m) => compute_media_queries(m, theme),
@@ -30,7 +32,6 @@ pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>, theme: Th
         },
       }
     })
-    .flatten()
     .flat_map(|style| style.selectors.0.iter().map(|s| (s, &style.declarations)))
     .collect();
 
@@ -89,7 +90,8 @@ pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>, theme: Th
         let name = v.name.ident.0.as_ref();
         if let Some(source) = variables.get(name) {
           let id = p.property_id.clone();
-          if let Ok(prop) = Property::parse_string(id, source, ParserOptions::default()) {
+          let parser_opts = ParserOptions::default();
+          if let Ok(prop) = Property::parse_string(id, source, parser_opts) {
             if let Err(e) = computed.apply(&prop) {
               warn!("{}", e);
             }
