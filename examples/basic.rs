@@ -18,6 +18,8 @@ fn main() {
     }
   });
 
+  let mut rules = None;
+
   event_loop.run(move |event, _, control_flow| {
     *control_flow = ControlFlow::Wait;
     match event {
@@ -26,10 +28,19 @@ fn main() {
           Event::Error(e) => {
             println!("Got error: {:?}", e);
           },
-          Event::Parsed(rules) => {
-            let theme = get_theme();
-            rules.compute(&elt, theme);
+          Event::Parsed(new_rules) => {
             println!("Event: Parsed");
+            let theme = get_theme();
+            let c = new_rules.compute(&elt, theme);
+            println!("Computed: {:?}", c);
+            rules = Some(new_rules);
+          },
+          Event::ThemeChanged => {
+            if let Some(rules) = rules.as_ref() {
+              let theme = get_theme();
+              let c = rules.compute(&elt, theme);
+              println!("Computed: {:?}", c);
+            }
           },
           event => {
             println!("Event: {:?}", event);

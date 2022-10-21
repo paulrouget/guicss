@@ -1,8 +1,9 @@
-
-
 @media (prefers-color-scheme: dark) {
   * {
     margin: 2px;
+  }
+  hbox {
+    border-radius: 2px;
   }
 }
 
@@ -35,7 +36,6 @@ hbox {
   border-top-color: cyan;
 
 
-  border-radius: 2px;
   foo: 1px;
 
 }
