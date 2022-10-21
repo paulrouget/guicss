@@ -3,7 +3,16 @@
     margin: 2px;
   }
   hbox {
-    border-radius: 2px;
+    --x: 100px;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  * {
+    margin: 2px;
+  }
+  hbox {
+    --x: 200px;
   }
 }
 
@@ -14,6 +23,10 @@
 }
 
 @media (os-version: macos) and (os-version: linux), (foo: bar) {
+}
+
+#foo {
+  border-radius: var(--x);
 }
 
 hbox {

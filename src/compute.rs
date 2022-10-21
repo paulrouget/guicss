@@ -19,7 +19,6 @@ use crate::properties::ComputedProperties;
 use crate::theme::Theme;
 
 pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>, theme: Theme) -> ComputedProperties {
-  let mut variables = HashMap::new();
   let mut computed = ComputedProperties::default();
   let mut rules: Vec<(&Selector<'_, Selectors>, &DeclarationBlock<'_>)> = stylesheet
     .rules
@@ -86,6 +85,8 @@ pub fn compute(stylesheet: &StyleSheet<'_, '_>, element: &Element<'_>, theme: Th
   let important = important.into_iter().flatten();
 
   let all = normal.chain(important);
+
+  let mut variables = HashMap::new();
 
   let without_var: Vec<_> = all
     .filter(|prop| {

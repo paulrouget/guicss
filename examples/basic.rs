@@ -10,7 +10,7 @@ fn main() {
   let proxy = event_loop.create_proxy();
 
   let path = std::path::PathBuf::from("./examples/basic.css");
-  let elt = Element::named("hbox");
+  let elt = Element::named("hbox").id("foo");
 
   spawn_and_parse(path, move |event| {
     if let Err(e) = proxy.send_event(event) {

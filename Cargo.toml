@@ -7,13 +7,13 @@ edition = "2021"
 crate-type = ["rlib"]
 
 [dependencies]
-lightningcss = "1.0.0-alpha.35"
-log = "0.4"
-notify = "5.0"
-ouroboros = "0.15.5"
 anyhow = "1.0"
+log = "0.4"
 crossbeam-channel = "0.5"
-objc2 = "=0.3.0-beta.3"
+lightningcss = "1.0.0-alpha.35" # CSS Parsing
+notify = "5.0" # File watching
+ouroboros = "0.15.5" # Self referenced rules
+objc2 = "=0.3.0-beta.3" # OSX theme color mechanism
 
 [dev-dependencies]
 winit = "0.27.4" # For examples
