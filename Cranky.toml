@@ -2,7 +2,7 @@
 # cargo install cargo-cranky && cargo cranky
 
 deny = [
-  "unsafe_code",
+  # "unsafe_code",
 ]
 
 warn = [
