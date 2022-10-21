@@ -45,7 +45,7 @@ where F: Fn(Event) + Send + 'static {
   std::thread::spawn(move || {
     debug!("CSS thread spawned");
 
-    let theme = match watchers::theme() {
+    let theme = match watchers::theme::watch() {
       Ok(w) => w,
       Err(e) => {
         cb(Event::Error(e.to_string()));
@@ -53,7 +53,7 @@ where F: Fn(Event) + Send + 'static {
       },
     };
 
-    let file = match watchers::file(&path) {
+    let file = match watchers::file::watch(&path) {
       Ok(w) => w,
       Err(e) => {
         cb(Event::Error(e.to_string()));
@@ -70,7 +70,7 @@ where F: Fn(Event) + Send + 'static {
       select! {
         recv(theme.recv) -> e => {
           match e {
-            Ok(watchers::ThemeEvent::Changed) => {
+            Ok(watchers::theme::Event::Changed) => {
               cb(Event::ThemeChanged);
             },
             Err(e) => {
@@ -80,13 +80,13 @@ where F: Fn(Event) + Send + 'static {
         },
         recv(file.recv) -> e => {
           match e {
-            Ok(watchers::FileEvent::Changed) => {
+            Ok(watchers::file::Event::Changed) => {
               match parse(&path) {
                 Ok(stylesheet) => cb(Event::FileChanged(stylesheet)),
                 Err(e) => cb(Event::Error(e.to_string())),
               }
             },
-            Ok(watchers::FileEvent::Error(e)) => {
+            Ok(watchers::file::Event::Error(e)) => {
               cb(Event::Error(e));
             },
             Err(e) => {
