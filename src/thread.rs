@@ -19,12 +19,16 @@ use lightningcss::values::ident::{DashedIdent, DashedIdentReference};
 use log::debug;
 use ouroboros::self_referencing;
 
+use crate::infallible_send as send;
+
 use crate::elements::Element;
 use crate::properties::ComputedProperties;
 
+use crate::watchers;
+
 pub enum Event {
   FileChanged,
-  SystemColorChanged,
+  ThemeChanged,
   /// Vec of error messages
   Parsed(ParserResult),
   Error(String),
@@ -34,15 +38,11 @@ impl std::fmt::Debug for Event {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       Event::FileChanged => write!(f, "FileChanged"),
-      Event::SystemColorChanged => write!(f, "SystemColorChanged"),
+      Event::ThemeChanged => write!(f, "SystemColorChanged"),
       Event::Parsed(_) => write!(f, "Parsed"),
       Event::Error(_) => write!(f, "Error"),
     }
   }
-}
-
-pub struct BgParser {
-  pub thread: Receiver<Event>,
 }
 
 #[self_referencing]
@@ -54,139 +54,20 @@ pub struct ParserResult {
 }
 
 impl<'i> ParserResult {
-  pub fn compute(&self, element: &Element<'i>) {
-    let mut variables = HashMap::new();
-    let mut computed = ComputedProperties::default();
-
+  pub fn compute(&self, element: &Element<'i>) -> ComputedProperties {
     self.with_stylesheet(|s| {
-      let mut rules: Vec<(&Selector<'_, Selectors>, &DeclarationBlock<'_>)> = s
-        .rules
-        .0
-        .iter()
-        .filter_map(|rule| {
-          match rule {
-            CssRule::Style(style) => Some([style].to_vec()),
-            CssRule::Media(MediaRule { query, rules, .. }) => {
-              let matches = query.media_queries.iter().any(
-                |MediaQuery {
-                   qualifier,
-                   media_type: _,
-                   condition,
-                 }| {
-                  match qualifier {
-                    Some(Qualifier::Not) => !condition.as_ref().map_or(true, check_media_query),
-                    _ => condition.as_ref().map_or(true, check_media_query),
-                  }
-                },
-              );
-              if matches {
-                // FIXME: only keeping on nesting level of media queries
-                Some(
-                  rules
-                    .0
-                    .iter()
-                    .filter_map(|r| {
-                      match r {
-                        CssRule::Style(style) => Some(style),
-                        _ => None,
-                      }
-                    })
-                    .collect(),
-                )
-              } else {
-                None
-              }
-            },
-            unknown => {
-              println!("Unsupported: {:?}", unknown);
-              None
-            },
-          }
-        })
-        .flatten()
-        .flat_map(|style| style.selectors.0.iter().map(|s| (s, &style.declarations)))
-        .collect();
-      rules.sort_by(|(s1, _), (s2, _)| s1.specificity().cmp(&s2.specificity()));
-
-      let mut context = MatchingContext::new(MatchingMode::Normal, None, None, QuirksMode::NoQuirks);
-      let (normal, important): (Vec<_>, Vec<_>) = rules
-        .into_iter()
-        .filter_map(|(s, decs)| {
-          if matches_selector(s, 0, None, &element, &mut context, &mut |_, _| {}) {
-            Some((&decs.declarations, &decs.important_declarations))
-          } else {
-            None
-          }
-        })
-        .unzip();
-
-      let normal = normal.into_iter().flatten();
-      let important = important.into_iter().flatten();
-
-      let all = normal.chain(important);
-
-      let without_var: Vec<_> = all
-        .filter(|prop| {
-          if let Property::Custom(CustomProperty { name, value: tokens }) = prop {
-            if name.starts_with("--") {
-              let mut source = String::new();
-              let mut printer = Printer::new(&mut source, PrinterOptions::default());
-              tokens.to_css(&mut printer, false).unwrap();
-              variables.insert(name.clone(), source.clone());
-              return false;
-            }
-          }
-          true
-        })
-        .collect();
-
-      for prop in without_var {
-        if let Property::Unparsed(UnparsedProperty {
-          property_id: id,
-          value: tokens,
-        }) = prop
-        {
-          if let Some(TokenOrValue::Var(Variable {
-            name: DashedIdentReference { ident: DashedIdent(name), .. },
-            ..
-          })) = tokens.0.get(0)
-          {
-            if let Some(source) = variables.get(name) {
-              if let Ok(prop) = Property::parse_string(id.clone(), source, ParserOptions::default()) {
-                if let Err(e) = computed.apply(&prop) {
-                  eprintln!("{}", e);
-                }
-                continue;
-              } else {
-                eprintln!("Could not parse `{}` variable content ({}) for property {:?}", name, source, prop);
-              }
-            } else {
-              eprintln!("Could not resolve variable: {}", name);
-            }
-          }
-        }
-        if let Err(e) = computed.apply(prop) {
-          eprintln!("{}", e);
-        }
-      }
-      println!("Computed property: {:?}", computed);
-    });
+      crate::compute::compute(s, element)
+    })
   }
 }
 
-fn send<T>(sender: &Sender<T>, event: T) {
-  if let Err(e) = sender.send(event) {
-    eprintln!("Sending message to thread failed: {}", e);
-  }
-}
-
-pub fn spawn_and_parse(path: PathBuf) -> BgParser {
+pub fn spawn_and_parse(path: PathBuf) -> Receiver<Event> {
   let (to_main, from_css_thread) = unbounded();
 
   std::thread::spawn(move || {
     debug!("CSS thread spawned");
 
-    let theme = match crate::watchers::theme() {
+    let theme = match watchers::theme() {
       Ok(w) => w,
       Err(e) => {
         send(&to_main, Event::Error(e.to_string()));
@@ -194,7 +75,7 @@ pub fn spawn_and_parse(path: PathBuf) -> BgParser {
       },
     };
 
-    let file = match crate::watchers::file(&path) {
+    let file = match watchers::file(&path) {
       Ok(w) => w,
       Err(e) => {
         send(&to_main, Event::Error(e.to_string()));
@@ -210,32 +91,37 @@ pub fn spawn_and_parse(path: PathBuf) -> BgParser {
     loop {
       select! {
         recv(theme.recv) -> e => {
-          println!("Event from theme: {:?}", e);
+          match e {
+            Ok(watchers::ThemeEvent::Changed) => {
+              send(&to_main, Event::ThemeChanged);
+            },
+            Err(e) => {
+              send(&to_main, Event::Error(e.to_string()));
+            }
+          }
         },
         recv(file.recv) -> e => {
-          println!("Event from file: {:?}", e);
+          match e {
+            Ok(watchers::FileEvent::Changed) => {
+              send(&to_main, Event::FileChanged);
+              match parse(&path) {
+                Ok(stylesheet) => send(&to_main, Event::Parsed(stylesheet)),
+                Err(e) => send(&to_main, Event::Error(e.to_string())),
+              }
+            },
+            Ok(watchers::FileEvent::Error(e)) => {
+              send(&to_main, Event::Error(e));
+            },
+            Err(e) => {
+              send(&to_main, Event::Error(e.to_string()));
+            }
+          }
         },
       }
-      // let event = from_file_watcher_thread.recv();
-      // match event {
-      //   Ok(WatcherEvent::FileChanged) => {
-      //     send(&to_main, Event::FileChanged);
-      //     match parse(&path) {
-      //       Ok(stylesheet) => send(&to_main, Event::Parsed(stylesheet)),
-      //       Err(e) => send(&to_main, Event::Error(e.to_string())),
-      //     }
-      //   },
-      //   Ok(WatcherEvent::Error(e)) => {
-      //     send(&to_main, Event::Error(e));
-      //   },
-      //   Err(e) => {
-      //     send(&to_main, Event::Error(e.to_string()));
-      //   },
-      // }
     }
   });
 
-  BgParser { thread: from_css_thread }
+  from_css_thread
 }
 
 fn parse(path: &Path) -> Result<ParserResult> {
@@ -251,28 +137,4 @@ fn parse(path: &Path) -> Result<ParserResult> {
     },
   }
   .try_build()
-}
-
-fn check_media_query(condition: &lightningcss::media_query::MediaCondition<'_>) -> bool {
-  use lightningcss::media_query::MediaCondition::{Feature, InParens, Not, Operation};
-  match condition {
-    Feature(MediaFeature::Plain {
-      name,
-      value: MediaFeatureValue::Ident(ident),
-    }) => {
-      match name.as_ref() {
-        "os-version" => ident.as_ref() == std::env::consts::OS,
-        "prefers-color-scheme" => ident.as_ref() == "light", // FIXME
-        _ => false,
-      }
-    },
-    Not(cond) => !check_media_query(cond),
-    Operation(conditions, Operator::And) => conditions.iter().all(check_media_query),
-    Operation(conditions, Operator::Or) => conditions.iter().any(check_media_query),
-    InParens(condition) => check_media_query(condition),
-    _ => {
-      // Unsupported
-      false
-    },
-  }
 }

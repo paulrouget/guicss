@@ -2,6 +2,8 @@ use std::path::Path;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use log::error;
 
+use crate::infallible_send as send;
+
 use anyhow::Result;
 
 use notify::event::{DataChange, EventKind, ModifyKind};
@@ -15,14 +17,8 @@ pub struct Watcher {
 
 #[derive(Debug)]
 pub enum Event {
-  FileChanged,
+  Changed,
   Error(String),
-}
-
-fn send<T>(sender: &Sender<T>, event: T) {
-  if let Err(e) = sender.send(event) {
-    error!("Sending message to css thread failed: {}", e);
-  }
 }
 
 pub fn watch(path: &Path) -> Result<Watcher> {
@@ -31,7 +27,7 @@ pub fn watch(path: &Path) -> Result<Watcher> {
     match res {
       Ok(e) => {
         if matches!(e.kind, EventKind::Modify(ModifyKind::Data(DataChange::Content))) {
-          send(&to_parent_thread, Event::FileChanged);
+          send(&to_parent_thread, Event::Changed);
         }
       },
       Err(e) => {

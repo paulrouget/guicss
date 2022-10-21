@@ -3,11 +3,11 @@ use anyhow::{bail, Result};
 use log::error;
 
 use std::ptr;
-use objc2::foundation::NSString;
+use objc2::foundation::{NSArray, NSString};
 use objc2::rc::{Id, Shared};
 use objc2::runtime::Object;
 use objc2::foundation::NSObject;
-use objc2::{class, declare_class, msg_send, msg_send_id, sel, ClassType};
+use objc2::{class, declare_class, extern_class, msg_send, msg_send_id, sel, ClassType};
 
 // FIXME: lame. Should be attached to the Delegate.
 static mut SENDER: Option<Sender<Event>> = None;
@@ -42,19 +42,17 @@ declare_class!(
         this
       })
     }
-  }
 
-
-  unsafe impl Delegate {
     #[sel(effectiveAppearanceDidChange:)]
     fn effective_appearance_did_change(&self, _sender: Option<&Object>) {
       if let Some(s) = unsafe { &SENDER } {
-        if let Err(e) = s.send(Event::ThemeChanged) {
+        if let Err(e) = s.send(Event::Changed) {
           error!("Sending message to css thread failed: {}", e);
         }
       }
     }
   }
+
 );
 
 pub struct Watcher {
@@ -63,9 +61,29 @@ pub struct Watcher {
 }
 
 #[derive(Debug)]
+pub enum Theme {
+  Dark,
+  Light,
+}
+
+#[derive(Debug)]
 pub enum Event {
-  ThemeChanged,
-  Error(String),
+  Changed,
+}
+
+pub fn get_theme() -> Theme {
+  // FIXME: ensure this runs in main thread
+  let app = crate::nsapp::NSApp();
+  let appearance = app.effectiveAppearance();
+  let name = appearance.bestMatchFromAppearancesWithNames(
+    &NSArray::from_slice(&[
+                         NSString::from_str("NSAppearanceNameAqua"),
+                         NSString::from_str("NSAppearanceNameDarkAqua")
+    ]));
+  match &*name.to_string() {
+    "NSAppearanceNameDarkAqua" => Theme::Dark,
+    _ => Theme::Light,
+  }
 }
 
 pub fn watch() -> Result<Watcher> {
