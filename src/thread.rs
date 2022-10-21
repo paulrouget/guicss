@@ -11,19 +11,16 @@ use crate::properties::ComputedProperties;
 use crate::watchers;
 
 pub enum Event {
-  FileChanged,
+  FileChanged(ParserResult),
   ThemeChanged,
-  /// Vec of error messages
-  Parsed(ParserResult),
   Error(String),
 }
 
 impl std::fmt::Debug for Event {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
-      Event::FileChanged => write!(f, "FileChanged"),
+      Event::FileChanged(_) => write!(f, "FileChanged"),
       Event::ThemeChanged => write!(f, "SystemColorChanged"),
-      Event::Parsed(_) => write!(f, "Parsed"),
       Event::Error(_) => write!(f, "Error"),
     }
   }
@@ -65,7 +62,7 @@ where F: Fn(Event) + Send + 'static {
     };
 
     match parse(&path) {
-      Ok(stylesheet) => cb(Event::Parsed(stylesheet)),
+      Ok(stylesheet) => cb(Event::FileChanged(stylesheet)),
       Err(e) => cb(Event::Error(e.to_string())),
     }
 
@@ -84,9 +81,8 @@ where F: Fn(Event) + Send + 'static {
         recv(file.recv) -> e => {
           match e {
             Ok(watchers::FileEvent::Changed) => {
-              cb(Event::FileChanged);
               match parse(&path) {
-                Ok(stylesheet) => cb(Event::Parsed(stylesheet)),
+                Ok(stylesheet) => cb(Event::FileChanged(stylesheet)),
                 Err(e) => cb(Event::Error(e.to_string())),
               }
             },

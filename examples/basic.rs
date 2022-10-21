@@ -28,7 +28,7 @@ fn main() {
           Event::Error(e) => {
             println!("Got error: {:?}", e);
           },
-          Event::Parsed(new_rules) => {
+          Event::FileChanged(new_rules) => {
             println!("Event: Parsed");
             let theme = get_theme();
             let c = new_rules.compute(&elt, theme);
@@ -41,9 +41,6 @@ fn main() {
               let c = rules.compute(&elt, theme);
               println!("Computed: {:?}", c);
             }
-          },
-          event => {
-            println!("Event: {:?}", event);
           },
         }
       },
