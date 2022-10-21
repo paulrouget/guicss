@@ -145,7 +145,7 @@ fn check_media_query(condition: &lightningcss::media_query::MediaCondition<'_>, 
         "os-version" => ident.as_ref() == std::env::consts::OS,
         "prefers-color-scheme" =>
         {
-          #[allow(clippy::match-like-matches-macro)]
+          #[allow(clippy::match_like_matches_macro)]
           match (ident.as_ref(), theme) {
             ("light", Theme::Light) => true,
             ("dark", Theme::Dark) => true,
