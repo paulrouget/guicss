@@ -26,15 +26,15 @@ declare_class!(
       this.map(|this| {
         let notification_center: Id<Object, Shared> = unsafe { msg_send_id![class!(NSDistributedNotificationCenter), defaultCenter] };
         let notification_name = NSString::from_str("AppleInterfaceThemeChangedNotification");
-        let _: () = unsafe {
-          msg_send![
+        unsafe {
+          let _: () = msg_send![
             &notification_center,
             addObserver: &*this
               selector: sel!(effectiveAppearanceDidChange:)
               name: &*notification_name
               object: ptr::null::<Object>()
-          ]
-        };
+          ];
+        }
         this
       })
     }
