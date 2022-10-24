@@ -1,7 +1,7 @@
 //! `GuiCss` is a CSS parser designed for Rust Desktop GUI.
 //!
-//! The idea is to make it easier to theme any Rust GUI, to iterate faster,
-//! or to offer theme customisation to the end user.
+//! The idea is to make it easier to theme any Rust GUI, iterate faster,
+//! or offer theme customisation to the end user.
 //!
 //! Features:
 //! - The parser recompiles the CSS file as the user modifies CSS file;
@@ -11,13 +11,14 @@
 //!   (`prefers-color-scheme: light|dark`);
 //! - Computed properties are exported to a generic format that can be use with
 //!   any toolkit. It also supports exporting to toolkit-specific style
-//!   structures.
+//!   structures;
+//! - CSS variables are supported;
 //!
 //! # CSS example
 //! ```css
 #![doc = include_str!("../examples/basic.css")]
 //! ```
-//! # Example with [winit]()
+//! # Example with [winit](https://lib.rs/winit)
 //! ```rust
 #![doc = include_str!("../examples/basic.rs")]
 //! ```
