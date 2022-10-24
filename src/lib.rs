@@ -1,5 +1,7 @@
 //! `GuiCss` is a CSS parser designed for Rust Desktop GUI.
 //!
+//! **Warning:** Work In Progress.
+//!
 //! The idea is to make it easier to theme any Rust GUI, iterate faster,
 //! or offer theme customisation to the end user.
 //!
