@@ -21,7 +21,7 @@
 #![doc = include_str!("../examples/basic.css")]
 //! ```
 //! # Example with [winit](https://lib.rs/winit)
-//! ```rust
+//! ```no_run
 #![doc = include_str!("../examples/basic.rs")]
 //! ```
 
