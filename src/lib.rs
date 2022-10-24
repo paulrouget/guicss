@@ -40,10 +40,10 @@
 
 mod compute;
 mod elements;
+mod file_watcher;
 mod properties;
 mod themes;
 mod thread;
-mod watchers;
 
 pub use elements::Element;
 pub use properties::ComputedProperties;

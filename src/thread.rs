@@ -9,8 +9,9 @@ use ouroboros::self_referencing;
 
 use crate::compute::{pre_compute, PreComputedRules};
 use crate::elements::Element;
+use crate::file_watcher::{watch as watch_file, Event as file_event};
 use crate::properties::ComputedProperties;
-use crate::watchers;
+use crate::themes::{watch as watch_theme, Event as theme_event};
 
 /// Events sent from CSS thread.
 pub enum Event {
@@ -84,7 +85,7 @@ where F: Fn(Event) + Send + 'static {
   std::thread::spawn(move || {
     debug!("CSS thread spawned");
 
-    let theme = match watchers::theme::watch() {
+    let theme = match watch_theme() {
       Ok(w) => w,
       Err(e) => {
         cb(Event::Error(e.to_string()));
@@ -99,7 +100,7 @@ where F: Fn(Event) + Send + 'static {
 
     loop {
       match theme.recv.recv() {
-        Ok(watchers::theme::Event::Invalidated) => {
+        Ok(theme_event::Invalidated) => {
           // FIXME: re-parsing is not necessary.
           // Only pre_compute should be called here.
           match parse(source.clone(), None) {
@@ -122,7 +123,7 @@ where F: Fn(Event) + Send + 'static {
   std::thread::spawn(move || {
     debug!("CSS thread spawned");
 
-    let theme = match watchers::theme::watch() {
+    let theme = match watch_theme() {
       Ok(w) => w,
       Err(e) => {
         cb(Event::Error(e.to_string()));
@@ -130,7 +131,7 @@ where F: Fn(Event) + Send + 'static {
       },
     };
 
-    let file = match watchers::file::watch(&path) {
+    let file = match watch_file(&path) {
       Ok(w) => w,
       Err(e) => {
         cb(Event::Error(e.to_string()));
@@ -147,7 +148,7 @@ where F: Fn(Event) + Send + 'static {
       select! {
         recv(theme.recv) -> e => {
           match e {
-            Ok(watchers::theme::Event::Invalidated) => {
+            Ok(theme_event::Invalidated) => {
               // FIXME: re-parsing is not necessary.
               // Only pre_compute should be called here.
               match read_and_parse(&path) {
@@ -162,13 +163,13 @@ where F: Fn(Event) + Send + 'static {
         },
         recv(file.recv) -> e => {
           match e {
-            Ok(watchers::file::Event::Invalidated) => {
+            Ok(file_event::Invalidated) => {
               match read_and_parse(&path) {
                 Ok(rules) => cb(Event::Invalidated(rules)),
                 Err(e) => cb(Event::Error(e.to_string())),
               }
             },
-            Ok(watchers::file::Event::Error(e)) => {
+            Ok(file_event::Error(e)) => {
               cb(Event::Error(e));
             },
             Err(e) => {
