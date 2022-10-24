@@ -12,5 +12,23 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Install rust nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
+            components: rustfmt, clippy
+      - name: Install cargo-doc2readme
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-doc2readme
+          version: latest
+          use-tool-cache: true
+      - name: Install cargo-cranky
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-cranky
+          version: latest
+          use-tool-cache: true
       - name: make check
-        run: make setup check
+        run: make check

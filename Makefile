@@ -6,6 +6,7 @@ MAKEFLAGS += --no-builtin-rules
 
 setup:
 	rustup install nightly
+	rustup component add rustfmt --toolchain nightly
 	cargo install cargo-doc2readme
 	cargo install cargo-cranky
 	cargo install cargo-udeps --locked
