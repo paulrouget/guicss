@@ -20,8 +20,4 @@ mod platform;
 #[path = "test.rs"]
 mod platform;
 
-#[cfg(all(not(target_os = "macos"), not(test)))]
-#[path = "test.rs"] // FIXME: For now, use test.rs for non-osx platform
-mod platform;
-
 pub(crate) use platform::*;
