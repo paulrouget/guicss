@@ -1,4 +1,5 @@
 use std::cell::Cell;
+
 use crate::themes::Theme;
 
 thread_local! {

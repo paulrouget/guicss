@@ -1,3 +1,7 @@
+![Maintenance](https://img.shields.io/badge/maintenance-experimental-blue.svg)
+
+# guicss
+
 `GuiCss` is a CSS parser designed for Rust Desktop GUI.
 
 OS-specific and Dark-theme-specific CSS code is supported via dedicated
@@ -8,6 +12,7 @@ mediaQueries:
 Rules and mediaQueries are invalidated when the file is modified by the
 user, or when the system wide theme changes (Dark mode).
 
+## CSS Example
 ```css
 @media (prefers-color-scheme: light) {
   hbox {
@@ -37,3 +42,4 @@ scrollarea::scrollbar {
 }
 ```
 
+License: MIT

@@ -21,7 +21,10 @@ fmt:
 check-fmt:
 	rustup run nightly cargo fmt --check
 
-fix: fmt
+readme:
+	cargo readme > Readme.md
+
+fix: fmt readme
 	rustup run nightly cargo cranky --fix
 
 check-udeps:
@@ -31,6 +34,7 @@ check-cranky:
 	rustup run nightly cargo cranky -- -D warnings
 
 check: test doc check-fmt check-udeps check-cranky
+	cargo readme > /dev/null
 
 test:
 	cargo test

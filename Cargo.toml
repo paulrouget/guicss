@@ -2,9 +2,14 @@
 name = "guicss"
 version = "0.1.0"
 edition = "2021"
+authors = ["Paul Rouget <me@paulrouget.com>"]
+description = "A CSS engine for Rust GUIs"
+license = "MIT"
+keywords = [ "CSS", "gui" ]
+repository = "https://github.com/paulrouget/guicss"
 
-[lib]
-crate-type = ["rlib"]
+[badges]
+maintenance = { status = "experimental" }
 
 [dependencies]
 anyhow = "1.0"
@@ -19,4 +24,4 @@ objc2 = "=0.3.0-beta.3" # OSX theme color mechanism
 winit = "0.27.4" # For examples
 
 [patch.crates-io]
-lightningcss = { path = "../lightningcss/" }
+lightningcss = { git = "https://github.com/paulrouget/lightningcss/", branch = "guicss" }
