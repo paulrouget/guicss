@@ -57,9 +57,9 @@ fn read_and_parse(path: &Path) -> Result<Rules> {
 /// Parse string.
 /// # Errors
 /// Parsing errors.
-pub fn parse(source: String, path: Option<&Path>) -> Result<Rules> {
+pub fn parse(source: impl Into<String>, path: Option<&Path>) -> Result<Rules> {
   ParserResultTryBuilder {
-    source,
+    source: source.into(),
     rules_builder: |source| {
       let options = match path {
         Some(path) => {
@@ -101,8 +101,7 @@ where F: Fn(Event) + Send + 'static {
     loop {
       match theme.recv.recv() {
         Ok(theme_event::Invalidated) => {
-          // FIXME: re-parsing is not necessary.
-          // Only pre_compute should be called here.
+          // FIXME: Do not re-parse CSS when theme has changed #3
           match parse(source.clone(), None) {
             Ok(rules) => cb(Event::Invalidated(rules)),
             Err(e) => cb(Event::Error(e.to_string())),
@@ -149,8 +148,7 @@ where F: Fn(Event) + Send + 'static {
         recv(theme.recv) -> e => {
           match e {
             Ok(theme_event::Invalidated) => {
-              // FIXME: re-parsing is not necessary.
-              // Only pre_compute should be called here.
+              // FIXME: Do not re-parse CSS when theme has changed #3
               match read_and_parse(&path) {
                 Ok(rules) => cb(Event::Invalidated(rules)),
                 Err(e) => cb(Event::Error(e.to_string())),

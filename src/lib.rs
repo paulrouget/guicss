@@ -42,18 +42,32 @@ mod tests {
 
   use crate::themes::{set_theme, Theme};
   use crate::{parse, ComputedProperties, Element};
-  const RED: Option<RGBA> = Some(RGBA {
+  const RED_COLOR: Option<RGBA> = Some(RGBA {
     red: 255,
     green: 0,
     blue: 0,
     alpha: 255,
   });
-  const GREEN: Option<RGBA> = Some(RGBA {
+  const GREEN_COLOR: Option<RGBA> = Some(RGBA {
     red: 0,
     green: 128,
     blue: 0,
     alpha: 255,
   });
+
+  fn green_prop() -> ComputedProperties {
+    ComputedProperties {
+      color: GREEN_COLOR,
+      ..ComputedProperties::default()
+    }
+  }
+
+  fn red_prop() -> ComputedProperties {
+    ComputedProperties {
+      color: RED_COLOR,
+      ..ComputedProperties::default()
+    }
+  }
 
   #[test]
   fn basic() {
@@ -64,8 +78,7 @@ mod tests {
     hbox {
       color: green;
     }
-    "#
-    .to_owned();
+    "#;
 
     set_theme(Theme::Light);
 
@@ -75,20 +88,14 @@ mod tests {
     assert_eq!(
       rules.compute(&elt),
       ComputedProperties {
-        background_color: RED,
-        color: GREEN,
+        background_color: RED_COLOR,
+        color: GREEN_COLOR,
         ..ComputedProperties::default()
       }
     );
 
     let elt = Element::named("hbox");
-    assert_eq!(
-      rules.compute(&elt),
-      ComputedProperties {
-        color: GREEN,
-        ..ComputedProperties::default()
-      }
-    );
+    assert_eq!(rules.compute(&elt), green_prop());
   }
 
   #[test]
@@ -104,20 +111,23 @@ mod tests {
         color: green;
       }
     }
-    "#
-    .to_owned();
+    "#;
 
     set_theme(Theme::Dark);
 
     let rules = parse(source, None).unwrap();
 
     let elt = Element::named("hbox");
-    assert_eq!(
-      rules.compute(&elt),
-      ComputedProperties {
-        color: GREEN,
-        ..ComputedProperties::default()
-      }
-    );
+    assert_eq!(rules.compute(&elt), green_prop());
+  }
+
+  #[test]
+  fn attributes_and_classes() {
+    let r1 = parse("hbox[foo=bar] { color: red; }", None).unwrap();
+    let r2 = parse("hbox.foo.bar { color: green; }", None).unwrap();
+    let elt1 = Element::named("hbox").attribute("foo", "bar");
+    let elt2 = Element::named("hbox").class("foo").class("bar");
+    assert_eq!(r1.compute(&elt1), red_prop());
+    assert_eq!(r2.compute(&elt2), green_prop());
   }
 }

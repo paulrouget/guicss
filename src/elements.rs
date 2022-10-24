@@ -2,10 +2,11 @@ use std::collections::{HashMap, HashSet};
 
 use lightningcss::cssparser::ToCss;
 use lightningcss::parcel_selectors;
-use lightningcss::parcel_selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
+use lightningcss::parcel_selectors::attr::{AttrSelectorOperation, AttrSelectorOperator, CaseSensitivity, NamespaceConstraint};
 use lightningcss::parcel_selectors::matching::{ElementSelectorFlags, MatchingContext};
 use lightningcss::parcel_selectors::OpaqueElement;
 use lightningcss::selector::{PseudoClass, PseudoElement, SelectorIdent, SelectorString, Selectors};
+use log::warn;
 
 #[derive(Debug, Default, PartialEq)]
 pub(crate) enum ElementName<'i> {
@@ -95,6 +96,18 @@ impl<'i> Element<'i> {
     self.id = Some(id.into());
     self
   }
+
+  /// Add attribute to element.
+  pub fn attribute(mut self, name: impl Into<String>, value: impl Into<String>) -> Element<'i> {
+    self.attributes.insert(name.into(), value.into());
+    self
+  }
+
+  /// Add class to element.
+  pub fn class(mut self, name: impl Into<String>) -> Element<'i> {
+    self.classes.insert(name.into());
+    self
+  }
 }
 
 impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
@@ -153,11 +166,29 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
   fn attr_matches(
     &self,
     _: &NamespaceConstraint<&SelectorIdent<'_>>,
-    _local_name: &SelectorIdent<'_>,
-    _operation: &AttrSelectorOperation<&SelectorString<'_>>,
+    name: &SelectorIdent<'_>,
+    operation: &AttrSelectorOperation<&SelectorString<'_>>,
   ) -> bool {
-    // FIXME
-    false
+    let value = self.attributes.get(name.0.as_ref());
+    match operation {
+      AttrSelectorOperation::Exists => value.is_some(),
+      AttrSelectorOperation::WithValue {
+        operator,
+        case_sensitivity: _,
+        expected_value,
+      } => {
+        let expected_value = expected_value.0.as_ref();
+        // See https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors
+        #[allow(clippy::single_match_else)]
+        match operator {
+          AttrSelectorOperator::Equal => value.map_or(false, |v| v == expected_value),
+          _ => {
+            warn!("Unsupported selector");
+            false
+          },
+        }
+      },
+    }
   }
 
   // ts == tree-structural (fist-child & such)
@@ -169,8 +200,8 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
       Fullscreen, Future, Hover, InRange, Indeterminate, Invalid, Link, LocalLink, Muted, Optional, OutOfRange, Past, Paused, PlaceholderShown, Playing,
       ReadOnly, ReadWrite, Required, Seeking, Stalled, Target, TargetWithin, UserInvalid, UserValid, Valid, Visited, VolumeLocked, WebKitScrollbar,
     };
-    // FIXME: this exist because we can't use PartialEq (==) between 2 elements of
-    // same lifetime.
+    // This exist because we can't use PartialEq (==) between 2 elements of same
+    // lifetime.
     self.pseudo_classes.iter().any(|a| {
       match (a, pc) {
         (Hover, Hover) => true,
@@ -230,7 +261,7 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
   fn match_pseudo_element(&self, pe: &PseudoElement<'i>, _context: &mut MatchingContext<'_, '_, Self::Impl>) -> bool {
     use PseudoElement::{After, Backdrop, Before, Cue, CueRegion, FileSelectorButton, FirstLetter, FirstLine, Marker, Placeholder, Selection, WebKitScrollbar};
     match &self.name {
-      // FIXME: this exist because we can't use PartialEq (==) between 2 elements of same lifetime.
+      // This exist because we can't use PartialEq (==) between 2 elements of same lifetime.
       ElementName::Pseudo(elt) => {
         match (elt, pe) {
           (After, After) => true,

@@ -1,5 +1,3 @@
-// FIXME: warnings should be sent back instead of printed.
-
 use std::collections::HashMap;
 
 use lightningcss::declaration::DeclarationBlock;
@@ -24,6 +22,9 @@ use crate::themes::Theme;
 pub(crate) struct PreComputedRules<'i> {
   pub(crate) rules: Vec<(Selector<'i, Selectors>, DeclarationBlock<'i>)>,
 }
+
+// FIXME: CSS errors are only reported with warn!. We should send them back as
+// events #4
 
 pub(crate) fn pre_compute<'i>(stylesheet: StyleSheet<'i, '_>) -> PreComputedRules<'i> {
   let theme = crate::themes::get_theme();
@@ -84,7 +85,7 @@ impl<'i> PreComputedRules<'i> {
           if name.starts_with("--") {
             let mut source = String::new();
             let mut printer = Printer::new(&mut source, PrinterOptions::default());
-            // FIXME: it's unfortunate we have to stringify the already parsed CSS.
+            // FIXME: Do not serialise and parse variables values #1
             tokens.to_css(&mut printer, false).unwrap();
             variables.insert(name.clone(), source.clone());
             return false;
@@ -135,7 +136,7 @@ fn compute_media_queries(media: MediaRule<'_>, theme: Theme) -> Vec<StyleRule<'_
   });
   if matches {
     let rules_iter = media.rules.0.into_iter();
-    // FIXME: only keeping on nesting level of media queries
+    // Only keeping on nesting level of media queries
     rules_iter
       .filter_map(|r| {
         match r {

@@ -12,17 +12,16 @@ use objc2::{class, declare_class, extern_class, extern_methods, msg_send, msg_se
 
 use crate::themes::{Event, Theme};
 
-// FIXME: lame. Should be attached to the Delegate.
+// FIXME: Event sender in osx' theme watcher is unsafe #2
 static mut SENDER: Option<Sender<Event>> = None;
 
 pub(crate) fn get_theme() -> Theme {
-  // FIXME: ensure this runs in main thread
   let app = NSApp();
   let appearance = app.effectiveAppearance();
-  let name = appearance.bestMatchFromAppearancesWithNames(&NSArray::from_slice(&[
-    NSString::from_str("NSAppearanceNameAqua"),
-    NSString::from_str("NSAppearanceNameDarkAqua"),
-  ]));
+  let aqua = NSString::from_str("NSAppearanceNameAqua");
+  let dark_aqua = NSString::from_str("NSAppearanceNameDarkAqua");
+  let names = &NSArray::from_slice(&[aqua, dark_aqua]);
+  let name = appearance.bestMatchFromAppearancesWithNames(names);
   match &*name.to_string() {
     "NSAppearanceNameDarkAqua" => Theme::Dark,
     _ => Theme::Light,
@@ -66,7 +65,6 @@ extern_class!(
 );
 
 pub(crate) fn NSApp() -> Id<NSApplication, Shared> {
-  // FIXME: Only allow access from main thread
   NSApplication::shared(unsafe { MainThreadMarker::new_unchecked() })
 }
 
