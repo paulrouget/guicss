@@ -24,6 +24,12 @@ jobs:
           crate: cargo-doc2readme
           version: latest
           use-tool-cache: true
+      - name: Install cargo-udeps
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-udeps
+          version: latest
+          use-tool-cache: true
       - name: Install cargo-cranky
         uses: actions-rs/install@v0.1
         with:
