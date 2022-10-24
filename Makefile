@@ -4,13 +4,6 @@ SHELL := bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
-setup:
-	rustup install nightly
-	rustup component add rustfmt --toolchain nightly
-	cargo install cargo-doc2readme
-	cargo install cargo-cranky
-	cargo install cargo-udeps --locked
-
 all: build
 
 run:
@@ -47,6 +40,13 @@ check: doc check-readme check-fmt check-udeps check-cranky
 
 test:
 	cargo test
+
+setup:
+	rustup install nightly
+	rustup component add rustfmt --toolchain nightly
+	cargo install cargo-doc2readme
+	cargo install cargo-cranky
+	cargo install cargo-udeps --locked
 
 clean:
 	rm -rf target Cargo.lock
