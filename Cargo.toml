@@ -18,6 +18,8 @@ crossbeam-channel = "0.5"
 lightningcss = "1.0.0-alpha.35" # CSS Parsing
 notify = "5.0" # File watching
 ouroboros = "0.15.5" # Self referenced rules
+
+[target.'cfg(target_os="macos")'.dependencies]
 objc2 = "=0.3.0-beta.3" # OSX theme color mechanism
 
 [dev-dependencies]
