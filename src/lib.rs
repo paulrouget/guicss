@@ -1,41 +1,25 @@
 //! `GuiCss` is a CSS parser designed for Rust Desktop GUI.
 //!
-//! OS-specific and Dark-theme-specific CSS code is supported via dedicated
-//! mediaQueries:
-//! - `prefers-color-scheme:light/dark`
-//! - `os-version: macos/linux/windows`
+//! The idea is to make it easier to theme any Rust GUI, to iterate faster,
+//! or to offer theme customisation to the end user.
 //!
-//! Rules and mediaQueries are invalidated when the file is modified by the
-//! user, or when the system wide theme changes (Dark mode).
+//! Features:
+//! - The parser recompiles the CSS file as the user modifies CSS file;
+//! - Parsing runs in its dedicated thread;
+//! - The parser supports mediaQueries to write platform specific code
+//!   (`os-version: macos|linux|windows`) and to match the OS theme
+//!   (`prefers-color-scheme: light|dark`);
+//! - Computed properties are exported to a generic format that can be use with
+//!   any toolkit. It also supports exporting to toolkit-specific style
+//!   structures.
 //!
-//! # CSS Example
+//! # CSS example
 //! ```css
-//! @media (prefers-color-scheme: light) {
-//!   hbox {
-//!     --mycolor: black;
-//!   }
-//! }
-//!
-//! @media (prefers-color-scheme: dark) {
-//!   hbox {
-//!     --mycolor: white;
-//!   }
-//! }
-//!
-//! hbox {
-//!   color: var(--mycolor);
-//!   background-color: red !important;
-//! }
-//!
-//! scrollarea::scrollbar {
-//!   width: 12px;
-//! }
-//!
-//! @media (os-version: macos) {
-//!   hbox {
-//!     --toolbar-padding: 12px;
-//!   }
-//! }
+#![doc = include_str!("../examples/basic.css")]
+//! ```
+//! # Example with [winit]()
+//! ```rust
+#![doc = include_str!("../examples/basic.rs")]
 //! ```
 
 mod compute;

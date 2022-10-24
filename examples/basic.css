@@ -1,27 +1,27 @@
-@media (prefers-color-scheme: dark) {
-  * {
-    --bgcolor: black;
-  }
-}
-
 @media (prefers-color-scheme: light) {
-  * {
-    --bgcolor: white;
+  hbox {
+    --mycolor: black;
+    border: 2px solid blue;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  hbox {
+    --mycolor: white;
   }
 }
 
 hbox {
-  background-color: var(--bgcolor);
-  padding: 0px;
-  margin: 42px!important;
+  color: var(--mycolor);
+  background-color: red !important;
 }
 
-hbox {
-  margin: 10px;
+scrollarea::scrollbar {
+  width: 12px;
 }
 
 @media (os-version: macos) {
   hbox {
-    padding: 10px;
+    --toolbar-padding: 12px;
   }
 }

@@ -4,6 +4,12 @@ SHELL := bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
+setup:
+	rustup install nightly
+	cargo install cargo-doc2readme
+	cargo install cargo-cranky
+	cargo install cargo-udeps --locked
+
 all: build
 
 run:
@@ -16,25 +22,27 @@ doc:
 	cargo doc --no-deps
 
 fmt:
-	rustup run nightly cargo fmt
+	cargo +nightly fmt
 
 check-fmt:
-	rustup run nightly cargo fmt --check
+	cargo +nightly fmt --check
 
 readme:
-	cargo readme > Readme.md
+	cargo doc2readme --expand-macros --out Readme.md
+
+check-readme:
+	cargo doc2readme --expand-macros --out Readme.md --check
 
 fix: fmt readme
-	rustup run nightly cargo cranky --fix
+	cargo +nightly cranky --fix
 
 check-udeps:
-	rustup run nightly cargo udeps
+	cargo +nightly udeps
 
 check-cranky:
-	rustup run nightly cargo cranky -- -D warnings
+	cargo +nightly cranky -- -D warnings
 
-check: test doc check-fmt check-udeps check-cranky
-	cargo readme > /dev/null
+check: doc check-readme check-fmt check-udeps check-cranky
 
 test:
 	cargo test
