@@ -5,7 +5,7 @@
 //! The idea is to make it easier to theme any Rust GUI, iterate faster,
 //! or offer theme customisation to the end user.
 //!
-//! Features:
+//! # Features
 //! - The parser recompiles the CSS file as the user modifies CSS file;
 //! - Parsing runs in its dedicated thread;
 //! - The parser supports mediaQueries to write platform specific code
@@ -22,38 +22,34 @@
 //! ```
 //! # Example with [winit](https://lib.rs/winit)
 //! ```no_run
-#![doc = include_str!("../examples/basic.rs")]
+#![doc = include_str!("../examples/winit.rs")]
 //! ```
 
 mod compute;
-mod elements;
+/// Elements matched against selectors.
+pub mod element;
 mod file_watcher;
-mod properties;
+/// Helpers for toolkits.
+pub mod integration;
+/// Parsing operations.
+pub mod parser;
+/// Parsed and computed properties.
+pub mod properties;
 mod themes;
-mod thread;
 
-pub use elements::Element;
-pub use properties::ComputedProperties;
-pub use thread::{parse, parse_file, parse_string, Event, Rules};
+#[cfg(feature = "toolkit-iced")]
+pub use iced;
+#[cfg(feature = "toolkit-iced")]
+pub use iced_native;
 
 #[cfg(test)]
 mod tests {
-  use lightningcss::cssparser::RGBA;
-
-  use crate::themes::{set_theme, Theme};
-  use crate::{parse, ComputedProperties, Element};
-  const RED_COLOR: Option<RGBA> = Some(RGBA {
-    red: 255,
-    green: 0,
-    blue: 0,
-    alpha: 255,
-  });
-  const GREEN_COLOR: Option<RGBA> = Some(RGBA {
-    red: 0,
-    green: 128,
-    blue: 0,
-    alpha: 255,
-  });
+  use crate::element::Element;
+  use crate::parser::parse_string_sync as parse;
+  use crate::properties::{Color, ComputedProperties};
+  use crate::themes::{set_theme, SystemTheme};
+  const RED_COLOR: Color = Color { r: 255, g: 0, b: 0, a: 255 };
+  const GREEN_COLOR: Color = Color { r: 0, g: 128, b: 0, a: 255 };
 
   fn green_prop() -> ComputedProperties {
     ComputedProperties {
@@ -80,7 +76,7 @@ mod tests {
     }
     "#;
 
-    set_theme(Theme::Light);
+    set_theme(SystemTheme::Light);
 
     let rules = parse(source, None).unwrap();
 
@@ -113,7 +109,7 @@ mod tests {
     }
     "#;
 
-    set_theme(Theme::Dark);
+    set_theme(SystemTheme::Dark);
 
     let rules = parse(source, None).unwrap();
 

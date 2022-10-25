@@ -15,15 +15,25 @@ maintenance = { status = "experimental" }
 anyhow = "1.0"
 log = "0.4"
 crossbeam-channel = "0.5"
-lightningcss = "1.0.0-alpha.35" # CSS Parsing
-notify = "5.0" # File watching
-ouroboros = "0.15.5" # Self referenced rules
+lazy_static = "1.4"
+regex = "1.6"
+parking_lot = "0.12"
+notify = "5.0"
+ouroboros = "0.15.5"
+lightningcss = { git = "https://github.com/paulrouget/lightningcss/", branch = "guicss" }
+
+# Optionals
+iced = { git = "https://github.com/iced-rs/iced", rev = "8221794", optional = true }
+iced_native = { git = "https://github.com/iced-rs/iced", rev = "8221794", optional = true }
+
+[features]
+default = []
+toolkit-iced = ["dep:iced", "dep:iced_native"]
 
 [target.'cfg(target_os="macos")'.dependencies]
 objc2 = "=0.3.0-beta.3" # OSX theme color mechanism
+dispatch = "0.2"
 
 [dev-dependencies]
-winit = "0.27.4" # For examples
-
-[patch.crates-io]
-lightningcss = { git = "https://github.com/paulrouget/lightningcss/", branch = "guicss" }
+# For basic example
+winit = "0.27.4"

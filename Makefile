@@ -6,14 +6,17 @@ MAKEFLAGS += --no-builtin-rules
 
 all: build
 
-run:
-	cargo run --example basic
+run-winit:
+	cargo run --example winit
+
+run-iced:
+	cargo run --features="toolkit-iced" --example iced
 
 build:
-	cargo build --example basic
+	cargo build --all-features --examples
 
 doc:
-	cargo doc --no-deps
+	cargo doc --all-features --no-deps
 
 fmt:
 	cargo +nightly fmt
@@ -28,18 +31,18 @@ check-readme:
 	cargo doc2readme --expand-macros --out Readme.md --check
 
 fix: fmt readme
-	cargo +nightly cranky --fix
+	cargo +nightly cranky --all-features --fix
 
 check-udeps:
-	cargo +nightly udeps
+	cargo +nightly udeps --all-features
 
 check-cranky:
-	cargo +nightly cranky -- -D warnings
+	cargo +nightly cranky --all-features -- -D warnings
 
 check: doc check-readme check-fmt check-udeps check-cranky
 
 test:
-	cargo test
+	cargo test --all-features
 
 setup:
 	rustup install nightly

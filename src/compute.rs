@@ -15,9 +15,9 @@ use lightningcss::selector::Selectors;
 use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
 use log::warn;
 
-use crate::elements::Element;
+use crate::element::Element;
 use crate::properties::ComputedProperties;
-use crate::themes::Theme;
+use crate::themes::SystemTheme;
 
 pub(crate) struct PreComputedRules<'i> {
   pub(crate) rules: Vec<(Selector<'i, Selectors>, DeclarationBlock<'i>)>,
@@ -27,7 +27,7 @@ pub(crate) struct PreComputedRules<'i> {
 // events #4
 
 pub(crate) fn pre_compute<'i>(stylesheet: StyleSheet<'i, '_>) -> PreComputedRules<'i> {
-  let theme = crate::themes::get_theme();
+  let theme = crate::themes::get_system_theme();
   // Iterator over all the rules, including rules under matching MediaQueries
   let rules_iter = stylesheet.rules.0.into_iter();
   let mut all_rules: Vec<_> = rules_iter
@@ -127,7 +127,7 @@ impl<'i> PreComputedRules<'i> {
   }
 }
 
-fn compute_media_queries(media: MediaRule<'_>, theme: Theme) -> Vec<StyleRule<'_>> {
+fn compute_media_queries(media: MediaRule<'_>, theme: SystemTheme) -> Vec<StyleRule<'_>> {
   let matches = media.query.media_queries.into_iter().any(|m| {
     match m.qualifier {
       Some(Qualifier::Not) => !m.condition.as_ref().map_or(true, |c| does_query_match(c, theme)),
@@ -150,7 +150,7 @@ fn compute_media_queries(media: MediaRule<'_>, theme: Theme) -> Vec<StyleRule<'_
   }
 }
 
-fn does_query_match(condition: &lightningcss::media_query::MediaCondition<'_>, theme: Theme) -> bool {
+fn does_query_match(condition: &lightningcss::media_query::MediaCondition<'_>, theme: SystemTheme) -> bool {
   use lightningcss::media_query::MediaCondition::{Feature, InParens, Not, Operation};
   match condition {
     Feature(MediaFeature::Plain {
@@ -163,8 +163,8 @@ fn does_query_match(condition: &lightningcss::media_query::MediaCondition<'_>, t
         {
           #[allow(clippy::match_like_matches_macro)]
           match (ident.as_ref(), theme) {
-            ("light", Theme::Light) => true,
-            ("dark", Theme::Dark) => true,
+            ("light", SystemTheme::Light) => true,
+            ("dark", SystemTheme::Dark) => true,
             _ => false,
           }
         },

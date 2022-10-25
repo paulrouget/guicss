@@ -5,26 +5,34 @@ use std::ptr;
 use anyhow::{bail, Result};
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use log::error;
-use objc2::foundation::{MainThreadMarker, NSArray, NSObject, NSString};
+use objc2::foundation::{is_main_thread, MainThreadMarker, NSArray, NSObject, NSString};
 use objc2::rc::{Id, Shared};
 use objc2::runtime::Object;
 use objc2::{class, declare_class, extern_class, extern_methods, msg_send, msg_send_id, sel, ClassType};
 
-use crate::themes::{Event, Theme};
+use crate::themes::{Event, SystemTheme};
 
-// FIXME: Event sender in osx' theme watcher is unsafe #2
+// FIXME: Event sender is unsafe #2
 static mut SENDER: Option<Sender<Event>> = None;
 
-pub(crate) fn get_theme() -> Theme {
-  let app = NSApp();
-  let appearance = app.effectiveAppearance();
-  let aqua = NSString::from_str("NSAppearanceNameAqua");
-  let dark_aqua = NSString::from_str("NSAppearanceNameDarkAqua");
-  let names = &NSArray::from_slice(&[aqua, dark_aqua]);
-  let name = appearance.bestMatchFromAppearancesWithNames(names);
-  match &*name.to_string() {
-    "NSAppearanceNameDarkAqua" => Theme::Dark,
-    _ => Theme::Light,
+pub(crate) fn get_system_theme() -> SystemTheme {
+  let get_theme = || {
+    let app = NSApp();
+    let appearance = app.effectiveAppearance();
+    let aqua = NSString::from_str("NSAppearanceNameAqua");
+    let dark_aqua = NSString::from_str("NSAppearanceNameDarkAqua");
+    let names = &NSArray::from_slice(&[aqua, dark_aqua]);
+    let name = appearance.bestMatchFromAppearancesWithNames(names);
+    match &*name.to_string() {
+      "NSAppearanceNameDarkAqua" => SystemTheme::Dark,
+      _ => SystemTheme::Light,
+    }
+  };
+
+  if is_main_thread() {
+    get_theme()
+  } else {
+    dispatch::Queue::main().exec_sync(get_theme)
   }
 }
 
@@ -112,7 +120,7 @@ declare_class!(
     #[sel(effectiveAppearanceDidChange:)]
     fn effective_appearance_did_change(&self, _sender: Option<&Object>) {
       if let Some(s) = unsafe { &SENDER } {
-        if let Err(e) = s.send(Event::Invalidated) {
+        if let Err(e) = s.send(Event::Changed) {
           error!("Sending message to css thread failed: {}", e);
         }
       }
@@ -125,7 +133,7 @@ pub(crate) struct Watcher {
   pub(crate) recv: Receiver<Event>,
 }
 
-/// Sends `Event::Invalidated` when system-wide theme changed.
+/// Sends `Event::Changed` when system-wide theme changed.
 ///
 /// # Errors
 ///

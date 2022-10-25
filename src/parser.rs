@@ -8,7 +8,7 @@ use log::debug;
 use ouroboros::self_referencing;
 
 use crate::compute::{pre_compute, PreComputedRules};
-use crate::elements::Element;
+use crate::element::Element;
 use crate::file_watcher::{watch as watch_file, Event as file_event};
 use crate::properties::ComputedProperties;
 use crate::themes::{watch as watch_theme, Event as theme_event};
@@ -32,7 +32,7 @@ impl std::fmt::Debug for Event {
 }
 
 /// CSS parse result.
-pub struct Rules(ParserResult);
+pub struct Rules(OwnedResult);
 
 impl Rules {
   /// Compute properties of element.
@@ -42,33 +42,32 @@ impl Rules {
 }
 
 #[self_referencing]
-struct ParserResult {
+struct OwnedResult {
   source: String,
   #[borrows(source)]
   #[not_covariant]
   rules: PreComputedRules<'this>,
 }
 
-fn read_and_parse(path: &Path) -> Result<Rules> {
-  let source = read_to_string(path)?;
-  parse(source, Some(path))
-}
-
 /// Parse string.
-/// # Errors
-/// Parsing errors.
-pub fn parse(source: impl Into<String>, path: Option<&Path>) -> Result<Rules> {
-  ParserResultTryBuilder {
+pub fn parse_string_sync(source: impl Into<String>, path: Option<&Path>) -> Result<Rules> {
+  OwnedResultTryBuilder {
     source: source.into(),
     rules_builder: |source| {
       let options = match path {
         Some(path) => {
           ParserOptions {
+            error_recovery: false,
             filename: path.to_string_lossy().to_string(),
             ..ParserOptions::default()
           }
         },
-        None => ParserOptions::default(),
+        None => {
+          ParserOptions {
+            error_recovery: false,
+            ..ParserOptions::default()
+          }
+        },
       };
       let stylesheet = StyleSheet::parse(source, options).map_err(|e| anyhow!("Parsing error: {}", e))?;
       Ok(pre_compute(stylesheet))
@@ -78,6 +77,7 @@ pub fn parse(source: impl Into<String>, path: Option<&Path>) -> Result<Rules> {
   .map(Rules)
 }
 
+// FIXME: code duplication
 /// Parse string. Event are sent via the closure.
 /// Closure is run in different thread.
 pub fn parse_string<F>(source: String, cb: F)
@@ -93,16 +93,16 @@ where F: Fn(Event) + Send + 'static {
       },
     };
 
-    match parse(source.clone(), None) {
+    match parse_string_sync(source.clone(), None) {
       Ok(rules) => cb(Event::Invalidated(rules)),
       Err(e) => cb(Event::Error(e.to_string())),
     }
 
     loop {
       match theme.recv.recv() {
-        Ok(theme_event::Invalidated) => {
+        Ok(theme_event::Changed) => {
           // FIXME: Do not re-parse CSS when theme has changed #3
-          match parse(source.clone(), None) {
+          match parse_string_sync(source.clone(), None) {
             Ok(rules) => cb(Event::Invalidated(rules)),
             Err(e) => cb(Event::Error(e.to_string())),
           }
@@ -115,10 +115,16 @@ where F: Fn(Event) + Send + 'static {
   });
 }
 
+/// Parse file.
+pub fn parse_file_sync(path: &Path) -> Result<Rules> {
+  let source = read_to_string(path)?;
+  parse_string_sync(source, Some(path))
+}
+
 /// Parse and watch a file. Event are sent via the closure.
 /// Closure is run in different thread.
-pub fn parse_file<F>(path: PathBuf, cb: F)
-where F: Fn(Event) + Send + 'static {
+pub fn parse_file<F>(path: PathBuf, mut cb: F)
+where F: FnMut(Event) + Send + 'static {
   std::thread::spawn(move || {
     debug!("CSS thread spawned");
 
@@ -138,7 +144,7 @@ where F: Fn(Event) + Send + 'static {
       },
     };
 
-    match read_and_parse(&path) {
+    match parse_file_sync(&path) {
       Ok(rules) => cb(Event::Invalidated(rules)),
       Err(e) => cb(Event::Error(e.to_string())),
     }
@@ -147,9 +153,9 @@ where F: Fn(Event) + Send + 'static {
       select! {
         recv(theme.recv) -> e => {
           match e {
-            Ok(theme_event::Invalidated) => {
+            Ok(theme_event::Changed) => {
               // FIXME: Do not re-parse CSS when theme has changed #3
-              match read_and_parse(&path) {
+              match parse_file_sync(&path) {
                 Ok(rules) => cb(Event::Invalidated(rules)),
                 Err(e) => cb(Event::Error(e.to_string())),
               }
@@ -162,7 +168,7 @@ where F: Fn(Event) + Send + 'static {
         recv(file.recv) -> e => {
           match e {
             Ok(file_event::Invalidated) => {
-              match read_and_parse(&path) {
+              match parse_file_sync(&path) {
                 Ok(rules) => cb(Event::Invalidated(rules)),
                 Err(e) => cb(Event::Error(e.to_string())),
               }

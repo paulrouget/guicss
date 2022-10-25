@@ -1,5 +1,7 @@
 //! Basic example. Forwarding `guicss` events to Winit event loop,
 
+use guicss::element::Element;
+use guicss::parser::{parse_file, Event};
 use winit::event::{Event as WinitEvent, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoopBuilder};
 
@@ -8,9 +10,9 @@ fn main() {
   let proxy = event_loop.create_proxy();
 
   let path = std::path::PathBuf::from("./examples/basic.css");
-  let elt = guicss::Element::named("hbox").id("foo");
+  let elt = Element::named("hbox").id("foo");
 
-  guicss::parse_file(path, move |event| {
+  parse_file(path, move |event| {
     if let Err(e) = proxy.send_event(event) {
       eprintln!("Sending user event failed: {}", e);
     }
@@ -21,10 +23,10 @@ fn main() {
     match event {
       WinitEvent::UserEvent(event) => {
         match event {
-          guicss::Event::Error(e) => {
-            eprintln!("Got error: {:?}", e);
+          Event::Error(e) => {
+            eprintln!("Got error: {}", e);
           },
-          guicss::Event::Invalidated(new_rules) => {
+          Event::Invalidated(new_rules) => {
             println!("Event: Parsed");
             let c = new_rules.compute(&elt);
             println!("Computed: {:?}", c);

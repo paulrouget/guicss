@@ -5,13 +5,14 @@ use lightningcss::parcel_selectors;
 use lightningcss::parcel_selectors::attr::{AttrSelectorOperation, AttrSelectorOperator, CaseSensitivity, NamespaceConstraint};
 use lightningcss::parcel_selectors::matching::{ElementSelectorFlags, MatchingContext};
 use lightningcss::parcel_selectors::OpaqueElement;
-use lightningcss::selector::{PseudoClass, PseudoElement, SelectorIdent, SelectorString, Selectors};
+pub use lightningcss::selector::{PseudoClass, PseudoElement};
+use lightningcss::selector::{SelectorIdent, SelectorString, Selectors};
 use log::warn;
 
 #[derive(Debug, Default, PartialEq)]
 pub(crate) enum ElementName<'i> {
   Pseudo(PseudoElement<'i>),
-  Named(String),
+  Named(&'i str),
   #[default]
   Unnamed,
 }
@@ -29,11 +30,12 @@ impl<'i> std::fmt::Display for ElementName<'i> {
 /// Object that can be matched against a selector.
 #[derive(Default)]
 pub struct Element<'i> {
+  is_root: bool,
   name: ElementName<'i>,
-  id: Option<String>,
-  classes: HashSet<String>,
+  pub(crate) id: Option<&'i str>,
+  pub(crate) classes: HashSet<&'i str>,
   pseudo_classes: Vec<PseudoClass<'i>>,
-  attributes: HashMap<String, String>,
+  attributes: HashMap<&'i str, &'i str>,
 }
 
 impl<'i> std::fmt::Debug for Element<'i> {
@@ -67,10 +69,26 @@ impl<'i> Element<'i> {
     Element::default()
   }
 
-  /// Named element. Matches against: `name {}`.
-  pub fn named(name: impl Into<String>) -> Element<'i> {
+  /// Pseudo element.
+  pub fn pseudo(pseudo: PseudoElement<'i>) -> Element<'i> {
     Element {
-      name: ElementName::Named(name.into()),
+      name: ElementName::Pseudo(pseudo),
+      ..Default::default()
+    }
+  }
+
+  /// Named element. Matches against: `name {}`.
+  pub fn named(name: &'i str) -> Element<'i> {
+    Element {
+      name: ElementName::Named(name),
+      ..Default::default()
+    }
+  }
+
+  /// `:root` element
+  pub fn root() -> Element<'i> {
+    Element {
+      is_root: true,
       ..Default::default()
     }
   }
@@ -92,20 +110,26 @@ impl<'i> Element<'i> {
   }
 
   /// Set element's id. Matches against `#name {}`.
-  pub fn id(mut self, id: impl Into<String>) -> Element<'i> {
-    self.id = Some(id.into());
+  pub fn id(mut self, id: &'i str) -> Element<'i> {
+    self.id = Some(id);
     self
   }
 
   /// Add attribute to element.
-  pub fn attribute(mut self, name: impl Into<String>, value: impl Into<String>) -> Element<'i> {
-    self.attributes.insert(name.into(), value.into());
+  pub fn attribute(mut self, name: &'i str, value: &'i str) -> Element<'i> {
+    self.attributes.insert(name, value);
     self
   }
 
   /// Add class to element.
-  pub fn class(mut self, name: impl Into<String>) -> Element<'i> {
-    self.classes.insert(name.into());
+  pub fn class(mut self, name: &'i str) -> Element<'i> {
+    self.classes.insert(name);
+    self
+  }
+
+  /// Add pseudo class to element.
+  pub fn pseudo_class(mut self, class: PseudoClass<'i>) -> Element<'i> {
+    self.pseudo_classes.push(class);
     self
   }
 }
@@ -146,7 +170,7 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
   }
 
   fn has_local_name(&self, local_name: &SelectorIdent<'_>) -> bool {
-    if let ElementName::Named(name) = &self.name {
+    if let ElementName::Named(name) = self.name {
       name == local_name.0.as_ref()
     } else {
       false
@@ -181,7 +205,7 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
         // See https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors
         #[allow(clippy::single_match_else)]
         match operator {
-          AttrSelectorOperator::Equal => value.map_or(false, |v| v == expected_value),
+          AttrSelectorOperator::Equal => value.map_or(false, |v| *v == expected_value),
           _ => {
             warn!("Unsupported selector");
             false
@@ -293,7 +317,7 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
 
   fn has_id(&self, id: &SelectorIdent<'_>, _: CaseSensitivity) -> bool {
     // Not quirks mode. Always case sensitivie
-    self.id.as_ref().map_or(false, |i| i == id.0.as_ref())
+    self.id.as_ref().map_or(false, |i| *i == id.0.as_ref())
   }
 
   fn has_class(&self, name: &SelectorIdent<'_>, _: CaseSensitivity) -> bool {
@@ -314,6 +338,6 @@ impl<'i, 'a> parcel_selectors::Element<'i> for &Element<'a> {
   }
 
   fn is_root(&self) -> bool {
-    false
+    self.is_root
   }
 }

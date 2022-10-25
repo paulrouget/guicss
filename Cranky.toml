@@ -3,7 +3,7 @@
 
 deny = [
 # "unsafe_code",
-  "missing_docs",
+# "missing_docs",
   "clippy::all",
   "clippy::await_holding_lock",
   "clippy::char_lit_as_u8",
@@ -54,7 +54,6 @@ deny = [
   "clippy::mem_forget",
   "clippy::mismatched_target_os",
   "clippy::missing_enforced_import_renames",
-  "clippy::missing_errors_doc",
   "clippy::missing_safety_doc",
   "clippy::mut_mut",
   "clippy::mutex_integer",

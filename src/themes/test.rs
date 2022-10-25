@@ -4,24 +4,24 @@ use std::cell::{Cell, RefCell};
 use anyhow::{bail, Result};
 use crossbeam_channel::{unbounded, Receiver, Sender};
 
-use crate::themes::{Event, Theme};
+use crate::themes::{Event, SystemTheme};
 
 thread_local! {
-  static THEME: Cell<Theme> = Cell::new(Theme::Light);
+  static THEME: Cell<SystemTheme> = Cell::new(SystemTheme::Light);
   static SENDER: RefCell<Option<Sender<Event>>> = RefCell::new(None);
 }
 
 #[cfg(test)]
-pub(crate) fn set_theme(theme: Theme) {
+pub(crate) fn set_theme(theme: SystemTheme) {
   THEME.with(|t| t.set(theme));
   SENDER.with(|t| {
     if let Some(sender) = t.borrow().as_ref() {
-      sender.send(Event::Invalidated).unwrap();
+      sender.send(Event::Changed).unwrap();
     }
   });
 }
 
-pub(crate) fn get_theme() -> Theme {
+pub(crate) fn get_system_theme() -> SystemTheme {
   THEME.with(|t| t.get())
 }
 

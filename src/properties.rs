@@ -1,8 +1,59 @@
+#![allow(missing_docs)]
+
 use anyhow::{bail, Result};
 use lightningcss::cssparser::RGBA;
 use lightningcss::printer::PrinterOptions;
 use lightningcss::properties::Property;
+use lightningcss::values::color::CssColor;
 
+/// RGBA color.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Color {
+  pub r: u8,
+  pub g: u8,
+  pub b: u8,
+  pub a: u8,
+}
+
+impl Color {
+  pub(crate) fn transparent() -> Color {
+    Color { r: 0, g: 0, b: 0, a: 0 }
+  }
+
+  #[cfg(feature = "toolkit-iced")]
+  pub(crate) fn to_opt(self) -> Option<Color> {
+    if self.a == 0 {
+      None
+    } else {
+      Some(self)
+    }
+  }
+}
+
+impl From<RGBA> for Color {
+  fn from(c: RGBA) -> Color {
+    Color {
+      r: c.red,
+      g: c.green,
+      b: c.blue,
+      a: c.alpha,
+    }
+  }
+}
+
+impl Default for Color {
+  fn default() -> Self {
+    Color::transparent()
+  }
+}
+
+impl From<&CssColor> for Color {
+  fn from(c: &CssColor) -> Self {
+    RGBA::from(c).into()
+  }
+}
+
+/// Layout direction.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum Direction {
   #[default]
@@ -15,10 +66,17 @@ pub enum Direction {
 pub struct Corners<T>
 where T: Default
 {
-  nw: (T, T),
-  ne: (T, T),
-  sw: (T, T),
-  se: (T, T),
+  pub nw: (T, T),
+  pub ne: (T, T),
+  pub sw: (T, T),
+  pub se: (T, T),
+}
+
+/// Width and color definition.
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
+pub struct WidthAndColor {
+  pub width: f32,
+  pub color: Color,
 }
 
 /// Four values for each side of an element.
@@ -26,22 +84,21 @@ where T: Default
 pub struct Sides<T>
 where T: Default
 {
-  top: T,
-  right: T,
-  bottom: T,
-  left: T,
+  pub top: T,
+  pub right: T,
+  pub bottom: T,
+  pub left: T,
 }
 
 /// All properties computed for a matching element.
-#[allow(missing_docs)]
 #[derive(Debug, Default, PartialEq)]
 pub struct ComputedProperties {
   pub border_radius: Corners<f32>,
-  pub border: Sides<(Option<RGBA>, f32)>,
+  pub border: Sides<WidthAndColor>,
   pub margin: Sides<f32>,
   pub padding: Sides<f32>,
-  pub background_color: Option<RGBA>,
-  pub color: Option<RGBA>,
+  pub background_color: Color,
+  pub color: Color,
   pub width: Option<f32>,
   pub height: Option<f32>,
   pub min_width: Option<f32>,
@@ -129,24 +186,24 @@ impl ComputedProperties {
         self.margin.left = *l;
         self.margin.right = *r;
       },
-      P::BorderTopColor(c) => self.border.top.0 = Some(c.into()),
-      P::BorderBottomColor(c) => self.border.bottom.0 = Some(c.into()),
-      P::BorderLeftColor(c) => self.border.left.0 = Some(c.into()),
-      P::BorderRightColor(c) => self.border.right.0 = Some(c.into()),
-      P::BorderTopWidth(BorderSideWidth::Length(Length::Value(Px(v)))) => self.border.top.1 = *v,
-      P::BorderBottomWidth(BorderSideWidth::Length(Length::Value(Px(v)))) => self.border.bottom.1 = *v,
-      P::BorderLeftWidth(BorderSideWidth::Length(Length::Value(Px(v)))) => self.border.left.1 = *v,
-      P::BorderRightWidth(BorderSideWidth::Length(Length::Value(Px(v)))) => self.border.right.1 = *v,
+      P::BorderTopColor(c) => self.border.top.color = c.into(),
+      P::BorderBottomColor(c) => self.border.bottom.color = c.into(),
+      P::BorderLeftColor(c) => self.border.left.color = c.into(),
+      P::BorderRightColor(c) => self.border.right.color = c.into(),
+      P::BorderTopWidth(BorderSideWidth::Length(Length::Value(Px(v)))) => self.border.top.width = *v,
+      P::BorderBottomWidth(BorderSideWidth::Length(Length::Value(Px(v)))) => self.border.bottom.width = *v,
+      P::BorderLeftWidth(BorderSideWidth::Length(Length::Value(Px(v)))) => self.border.left.width = *v,
+      P::BorderRightWidth(BorderSideWidth::Length(Length::Value(Px(v)))) => self.border.right.width = *v,
       P::BorderWidth(BorderWidth {
         top: BorderSideWidth::Length(Length::Value(Px(t))),
         bottom: BorderSideWidth::Length(Length::Value(Px(b))),
         right: BorderSideWidth::Length(Length::Value(Px(r))),
         left: BorderSideWidth::Length(Length::Value(Px(l))),
       }) => {
-        self.border.top.1 = *t;
-        self.border.bottom.1 = *b;
-        self.border.left.1 = *l;
-        self.border.right.1 = *r;
+        self.border.top.width = *t;
+        self.border.bottom.width = *b;
+        self.border.left.width = *l;
+        self.border.right.width = *r;
       },
       P::BorderColor(BorderColor {
         top: t,
@@ -154,24 +211,24 @@ impl ComputedProperties {
         right: r,
         left: l,
       }) => {
-        self.border.top.0 = Some(t.into());
-        self.border.bottom.0 = Some(b.into());
-        self.border.left.0 = Some(l.into());
-        self.border.right.0 = Some(r.into());
+        self.border.top.color = t.into();
+        self.border.bottom.color = b.into();
+        self.border.left.color = l.into();
+        self.border.right.color = r.into();
       },
       P::Border(GenericBorder {
         style: _,
         width: BorderSideWidth::Length(Length::Value(Px(w))),
         color: c,
       }) => {
-        let v = (Some(c.into()), *w);
+        let v = WidthAndColor { width: *w, color: c.into() };
         self.border.top = v;
         self.border.bottom = v;
         self.border.left = v;
         self.border.right = v;
       },
-      P::Color(c) => self.color = Some(c.into()),
-      P::BackgroundColor(c) => self.background_color = Some(c.into()),
+      P::Color(c) => self.color = c.into(),
+      P::BackgroundColor(c) => self.background_color = c.into(),
       P::BorderTopLeftRadius(Size2D(Dimension(Px(a)), Dimension(Px(b))), _) => self.border_radius.nw = (*a, *b),
       P::BorderTopRightRadius(Size2D(Dimension(Px(a)), Dimension(Px(b))), _) => self.border_radius.ne = (*a, *b),
       P::BorderBottomLeftRadius(Size2D(Dimension(Px(a)), Dimension(Px(b))), _) => self.border_radius.sw = (*a, *b),

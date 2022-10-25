@@ -1,10 +1,10 @@
 #[derive(Debug)]
 pub(crate) enum Event {
-  Invalidated,
+  Changed,
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub(crate) enum Theme {
+pub(crate) enum SystemTheme {
   #[default]
   Light,
   Dark,

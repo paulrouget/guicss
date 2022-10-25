@@ -18,11 +18,6 @@ pub(crate) enum Event {
 }
 
 /// Sends `Event::Invalidated` when file is modified.
-///
-/// # Errors
-///
-/// Will fail if inner-notification mechanism (`notify` crate) fails to
-/// initialize watcher.
 pub(crate) fn watch(path: &Path) -> Result<Watcher> {
   let (to_parent_thread, from_this_thread) = unbounded();
   let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
