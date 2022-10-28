@@ -69,7 +69,7 @@ pub fn parse_string_sync(source: impl Into<String>, path: Option<&Path>) -> Resu
           }
         },
       };
-      let stylesheet = StyleSheet::parse(source, options).map_err(|e| anyhow!("Parsing error: {}", e))?;
+      let stylesheet = StyleSheet::parse(source, options).map_err(|e| anyhow!("Parsing error: {e}"))?;
       Ok(pre_compute(stylesheet))
     },
   }

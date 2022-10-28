@@ -32,7 +32,7 @@ pub(crate) fn watch(path: &Path) -> Result<Watcher> {
       Err(e) => to_parent_thread.send(Event::Error(e.to_string())),
     };
     if let Err(e) = sent_op {
-      error!("Sending message failed: {}", e);
+      error!("Sending message failed: {e}");
     }
   })?;
 

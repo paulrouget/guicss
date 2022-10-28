@@ -121,7 +121,7 @@ declare_class!(
     fn effective_appearance_did_change(&self, _sender: Option<&Object>) {
       if let Some(s) = unsafe { &SENDER } {
         if let Err(e) = s.send(Event::Changed) {
-          error!("Sending message to css thread failed: {}", e);
+          error!("Sending message to css thread failed: {e}");
         }
       }
     }

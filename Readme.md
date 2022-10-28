@@ -74,7 +74,7 @@ fn main() {
 
  parse_file(path, move |event| {
    if let Err(e) = proxy.send_event(event) {
-     eprintln!("Sending user event failed: {}", e);
+     eprintln!("Sending user event failed: {e}");
    }
  });
 
@@ -84,12 +84,12 @@ fn main() {
      WinitEvent::UserEvent(event) => {
        match event {
          Event::Error(e) => {
-           eprintln!("Got error: {}", e);
+           eprintln!("Got error: {e}");
          },
          Event::Invalidated(new_rules) => {
            println!("Event: Parsed");
            let c = new_rules.compute(&elt);
-           println!("Computed: {:?}", c);
+           println!("Computed: {c:?}");
          },
        }
      },

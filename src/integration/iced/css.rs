@@ -29,7 +29,7 @@ impl CSS {
           sender.send(CssEvent::Invalidated)
         },
       }
-      .unwrap_or_else(|e| eprintln!("Could not send event {:?}", e))
+      .unwrap_or_else(|e| eprintln!("Could not send event {e:?}"))
       .now_or_never();
     });
     let receiver = Cell::new(Some(receiver));

@@ -40,7 +40,7 @@ pub struct Element<'i> {
 
 impl<'i> std::fmt::Debug for Element<'i> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self)
+    write!(f, "{self}")
   }
 }
 
@@ -48,16 +48,16 @@ impl<'i> std::fmt::Display for Element<'i> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}", &self.name)?;
     if let Some(id) = &self.id {
-      write!(f, "#{}", id)?;
+      write!(f, "#{id}")?;
     }
     for class in &self.classes {
-      write!(f, ".{}", class)?;
+      write!(f, ".{class}")?;
     }
     for class in &self.pseudo_classes {
       class.to_css(f)?;
     }
     for (name, value) in &self.attributes {
-      write!(f, "[{}=\"{}\"]", name, value)?;
+      write!(f, "[{name}=\"{value}\"]")?;
     }
     Ok(())
   }

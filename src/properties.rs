@@ -250,8 +250,8 @@ impl ComputedProperties {
       _ => {
         let o = PrinterOptions::default();
         match p.to_css_string(false, o) {
-          Ok(css) => bail!("Unsupported property: {}", css),
-          Err(e) => bail!("Unexpected error: {}", e),
+          Ok(css) => bail!("Unsupported property: {css}"),
+          Err(e) => bail!("Unexpected error: {e}"),
         }
       },
     }

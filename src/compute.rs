@@ -36,7 +36,7 @@ pub(crate) fn pre_compute<'i>(stylesheet: StyleSheet<'i, '_>) -> PreComputedRule
         CssRule::Style(style) => [style].to_vec(),
         CssRule::Media(m) => compute_media_queries(m, theme),
         unknown => {
-          warn!("Unsupported CSS Rule: {:?}", unknown);
+          warn!("Unsupported CSS Rule: {unknown:?}");
           vec![]
         },
       }
@@ -108,19 +108,19 @@ impl<'i> PreComputedRules<'i> {
             let parser_opts = ParserOptions::default();
             if let Ok(prop) = Property::parse_string(id, source, parser_opts) {
               if let Err(e) = computed.apply(&prop) {
-                warn!("{}", e);
+                warn!("{e}");
               }
               continue;
             } else {
-              warn!("Could not parse `{}` variable content ({}) for property {:?}", name, source, prop);
+              warn!("Could not parse `{name}` variable content ({source}) for property {prop:?}");
             }
           } else {
-            warn!("Could not resolve variable: {}", name);
+            warn!("Could not resolve variable: {name}");
           }
         }
       }
       if let Err(e) = computed.apply(prop) {
-        warn!("{}", e);
+        warn!("{e}");
       }
     }
     computed
