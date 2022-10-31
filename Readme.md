@@ -1,6 +1,6 @@
 # guicss ![License: MIT](https://img.shields.io/badge/license-MIT-blue) [![guicss on crates.io](https://img.shields.io/crates/v/guicss)](https://crates.io/crates/guicss) [![guicss on docs.rs](https://docs.rs/guicss/badge.svg)](https://docs.rs/guicss) [![Source Code Repository](https://img.shields.io/badge/Code-On%20github.com-blue)](https://github.com/paulrouget/guicss) [![guicss on deps.rs](https://deps.rs/repo/github/paulrouget/guicss/status.svg)](https://deps.rs/repo/github/paulrouget/guicss)
 
-`GuiCss` is a CSS parser designed for Rust Desktop GUI.
+`guicss` is a CSS parser designed for Rust Desktop GUI.
 
 **Warning:** Work In Progress.
 
