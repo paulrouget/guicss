@@ -1,12 +1,8 @@
-use iced::widget::text;
-use iced::{application, Background, Vector};
+use iced::application;
 
-use crate::element::{Element, PseudoClass};
-use crate::integration::iced::shared_rules::SharedRules;
-use crate::integration::iced::{IdAndClasses, CSS};
 use crate::properties::ComputedProperties;
 
-/// . ComputedProperties to application::Appearance
+/// `ComputedProperties` to `application::Appearance`
 
 impl From<ComputedProperties> for application::Appearance {
   fn from(c: ComputedProperties) -> application::Appearance {

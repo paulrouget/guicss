@@ -6,9 +6,8 @@ use iced::futures::channel::mpsc;
 use iced::futures::{FutureExt, SinkExt, StreamExt, TryFutureExt};
 use iced::subscription::{self, Subscription};
 
-use crate::element::Element;
 use crate::integration::iced::shared_rules::SharedRules;
-use crate::integration::iced::{CssEvent, IdAndClasses};
+use crate::integration::iced::CssEvent;
 use crate::parser::{parse_file, parse_file_sync, Event};
 
 pub struct CSS {

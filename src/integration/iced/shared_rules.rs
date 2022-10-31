@@ -1,11 +1,9 @@
 use std::sync::Arc;
 
 use iced::application;
-use iced::widget::{button, text};
 use parking_lot::RwLock;
 
-use crate::element::{Element, PseudoClass};
-use crate::integration::iced::IdAndClasses;
+use crate::element::Element;
 use crate::parser::Rules;
 use crate::properties::ComputedProperties;
 

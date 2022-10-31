@@ -1,24 +1,21 @@
 use std::borrow::Cow;
 
 use iced::widget::text;
-use iced::{application, Background, Vector};
 
-use crate::element::{Element, PseudoClass};
+use crate::element::Element;
 use crate::integration::iced::shared_rules::SharedRules;
 use crate::integration::iced::{IdAndClasses, CSS};
 use crate::properties::ComputedProperties;
 
-/// 1. CSS::text constructor (with layout style)
-/// 2. text::StyleSheet implementation (non-layout style)
-/// 3. ComputedProperties to text::Appearance
+/// 1. `CSS::text` constructor (with layout style)
+/// 2. `text::StyleSheet` implementation (non-layout style)
+/// 3. `ComputedProperties` to `text::Appearance`
 
 impl CSS {
   pub fn text<'a, Renderer>(&self, content: impl Into<Cow<'a, str>>, def: IdAndClasses) -> iced::widget::Text<'a, Renderer>
   where Renderer: iced_native::text::Renderer<Theme = SharedRules> {
-    use iced_native::Length;
-
     let elt = Element::def("text", &def);
-    let props = self.rules.compute(&elt);
+    let _props = self.rules.compute(&elt);
 
     // FIXME:
     // size(self, size: u16) // Sets the size of the Text.

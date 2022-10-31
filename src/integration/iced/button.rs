@@ -1,14 +1,14 @@
 use iced::widget::button;
-use iced::{application, Background, Vector};
+use iced::{Background, Vector};
 
 use crate::element::{Element, PseudoClass};
 use crate::integration::iced::shared_rules::SharedRules;
 use crate::integration::iced::{IdAndClasses, CSS};
 use crate::properties::ComputedProperties;
 
-/// 1. CSS::button constructor (with layout style)
-/// 2. button::StyleSheet implementation (non-layout style)
-/// 3. ComputedProperties to button::Appearance
+/// 1. `CSS::button` constructor (with layout style)
+/// 2. `button::StyleSheet` implementation (non-layout style)
+/// 3. `ComputedProperties` to `button::Appearance`
 
 impl CSS {
   pub fn button<'a, Message, Renderer>(

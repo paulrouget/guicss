@@ -1,6 +1,4 @@
-use iced::{application, Background, Vector};
-
-use crate::properties::{Color, ComputedProperties, Sides};
+use crate::properties::{Color, Sides};
 
 impl From<Color> for iced::Color {
   fn from(c: Color) -> iced::Color {
