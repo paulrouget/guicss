@@ -148,16 +148,14 @@ impl ComputedProperties {
     use lightningcss::properties::border::{BorderColor, BorderSideWidth, BorderWidth, GenericBorder};
     use lightningcss::properties::border_radius::BorderRadius;
     use lightningcss::properties::flex::FlexDirection;
+    use lightningcss::properties::font::{FontSize, VerticalAlign, VerticalAlignKeyword};
     use lightningcss::properties::margin_padding::{Margin, Padding};
     use lightningcss::properties::size::{MaxSize, Size};
+    use lightningcss::properties::text::TextAlign;
     use lightningcss::values::length::LengthValue::Px;
     use lightningcss::values::length::{Length, LengthPercentageOrAuto};
     use lightningcss::values::percentage::DimensionPercentage::Dimension;
     use lightningcss::values::size::Size2D;
-    use lightningcss::properties::font::FontSize;
-    use lightningcss::properties::text::TextAlign;
-    use lightningcss::properties::font::VerticalAlign;
-    use lightningcss::properties::font::VerticalAlignKeyword;
     use Property as P;
 
     match p {
