@@ -1,4 +1,4 @@
-use crate::properties::{Color, Sides};
+use crate::properties::{Align, Color, Sides};
 
 impl From<Color> for iced::Color {
   fn from(c: Color) -> iced::Color {
@@ -18,6 +18,28 @@ impl From<Sides<f32>> for iced::Padding {
       right: s.right as u16,
       bottom: s.bottom as u16,
       left: s.left as u16,
+    }
+  }
+}
+
+impl From<Align> for iced_native::alignment::Horizontal {
+  fn from(s: Align) -> Self {
+    match s {
+      Align::Start => Self::Left,
+      Align::Justify => Self::Left,
+      Align::End => Self::Right,
+      Align::Center => Self::Center,
+    }
+  }
+}
+
+impl From<Align> for iced_native::alignment::Vertical {
+  fn from(s: Align) -> Self {
+    match s {
+      Align::Start => Self::Top,
+      Align::Justify => Self::Top,
+      Align::End => Self::Bottom,
+      Align::Center => Self::Center,
     }
   }
 }

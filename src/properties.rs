@@ -90,6 +90,16 @@ where T: Default
   pub left: T,
 }
 
+/// Direction-agnostic alignment
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum Align {
+  #[default]
+  Start,
+  Center,
+  End,
+  Justify,
+}
+
 /// All properties computed for a matching element.
 #[derive(Debug, Default, PartialEq)]
 pub struct ComputedProperties {
@@ -108,6 +118,10 @@ pub struct ComputedProperties {
   pub direction: Direction,
   pub flex_basis: Option<f32>,
   pub flex_grow: f32,
+  pub font_size: Option<f32>,
+  pub text_align: Align,
+  pub vertical_align: Align,
+  // "text-justify"
   // "flex-direction"
   // "flex-wrap"
   // "flex-flow"
@@ -119,12 +133,8 @@ pub struct ComputedProperties {
   // "align-items"
   // "justify-items"
   // "font-weight"
-  // "font-size"
   // "font-family"
   // "font-style"
-  // "vertical-align"
-  // "text-align"
-  // "text-justify"
 
   // For icons
   // "fill"
@@ -144,9 +154,26 @@ impl ComputedProperties {
     use lightningcss::values::length::{Length, LengthPercentageOrAuto};
     use lightningcss::values::percentage::DimensionPercentage::Dimension;
     use lightningcss::values::size::Size2D;
+    use lightningcss::properties::font::FontSize;
+    use lightningcss::properties::text::TextAlign;
+    use lightningcss::properties::font::VerticalAlign;
+    use lightningcss::properties::font::VerticalAlignKeyword;
     use Property as P;
 
     match p {
+      P::FontSize(FontSize::Length(Dimension(Px(v)))) => self.font_size = Some(*v),
+
+      P::TextAlign(TextAlign::Start) => self.text_align = Align::Start,
+      P::TextAlign(TextAlign::Left) => self.text_align = Align::Start,
+      P::TextAlign(TextAlign::End) => self.text_align = Align::End,
+      P::TextAlign(TextAlign::Right) => self.text_align = Align::End,
+      P::TextAlign(TextAlign::Center) => self.text_align = Align::Center,
+      P::TextAlign(TextAlign::Justify) => self.text_align = Align::Justify,
+
+      P::VerticalAlign(VerticalAlign::Keyword(VerticalAlignKeyword::Top)) => self.vertical_align = Align::Start,
+      P::VerticalAlign(VerticalAlign::Keyword(VerticalAlignKeyword::Middle)) => self.vertical_align = Align::Center,
+      P::VerticalAlign(VerticalAlign::Keyword(VerticalAlignKeyword::Bottom)) => self.vertical_align = Align::End,
+
       P::Width(Size::LengthPercentage(Dimension(Px(v)))) => self.width = Some(*v),
       P::Height(Size::LengthPercentage(Dimension(Px(v)))) => self.height = Some(*v),
       P::MinWidth(Size::LengthPercentage(Dimension(Px(v)))) => self.min_width = Some(*v),

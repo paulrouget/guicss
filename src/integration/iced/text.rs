@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use iced::widget::text;
+use iced_native::Length;
 
 use crate::element::Element;
 use crate::integration::iced::shared_rules::SharedRules;
@@ -15,7 +16,7 @@ impl CSS {
   pub fn text<'a, Renderer>(&self, content: impl Into<Cow<'a, str>>, def: IdAndClasses) -> iced::widget::Text<'a, Renderer>
   where Renderer: iced_native::text::Renderer<Theme = SharedRules> {
     let elt = Element::def("text", &def);
-    let _props = self.rules.compute(&elt);
+    let props = self.rules.compute(&elt);
 
     // FIXME:
     // size(self, size: u16) // Sets the size of the Text.
@@ -24,14 +25,30 @@ impl CSS {
     // fn height(self, height: Length)
     // fn horizontal_alignment(self, alignment: Horizontal) -> Self
     // fn vertical_alignment(self, alignment: Vertical) -> Self
-    iced::widget::Text::new(content)
-        // .size(size)
-        // .font(font)
-        // .width(width)
-        // .height(height)
-        // .horizontal_alignment(align_h)
-        // .vertical_alignment(align_v)
-        .style(def)
+    let mut text = iced::widget::Text::new(content);
+
+    if let Some(size) = props.font_size {
+      text = text.size(size as u16);
+    }
+
+    // FIXME: missing font
+
+    let height = match props.height {
+      None => Length::Shrink,
+      Some(h) => Length::Units(h as u16),
+    };
+
+    let width = match props.width {
+      None => Length::Shrink,
+      Some(w) => Length::Units(w as u16),
+    };
+
+    text
+      .width(width)
+      .height(height)
+      .horizontal_alignment(props.text_align.into())
+      .vertical_alignment(props.vertical_align.into())
+      .style(def)
   }
 }
 
