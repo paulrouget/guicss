@@ -37,7 +37,6 @@ impl CSS {
   }
 
   pub fn rules(&self) -> SharedRules {
-    // FIXME: does that happen often?
     self.rules.clone()
   }
 
