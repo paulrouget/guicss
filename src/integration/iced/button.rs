@@ -22,6 +22,7 @@ impl CSS {
   {
     let elt = Element::def("button", &def);
     let props = self.rules.compute(&elt);
+    #[allow(clippy::match_same_arms)]
     let width = match (props.flex_grow as u16, props.flex_basis, props.width) {
       (0, None, None) => Length::Shrink,
       (0, None, Some(w)) => Length::Units(w as u16),

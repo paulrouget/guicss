@@ -24,6 +24,7 @@ impl From<Sides<f32>> for iced::Padding {
 
 impl From<Align> for iced_native::alignment::Horizontal {
   fn from(s: Align) -> Self {
+    #[allow(clippy::match_same_arms)]
     match s {
       Align::Start => Self::Left,
       Align::Justify => Self::Left,
@@ -35,6 +36,7 @@ impl From<Align> for iced_native::alignment::Horizontal {
 
 impl From<Align> for iced_native::alignment::Vertical {
   fn from(s: Align) -> Self {
+    #[allow(clippy::match_same_arms)]
     match s {
       Align::Start => Self::Top,
       Align::Justify => Self::Top,
