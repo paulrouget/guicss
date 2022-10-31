@@ -6,12 +6,13 @@ use iced::futures::channel::mpsc;
 use iced::futures::{FutureExt, SinkExt, StreamExt, TryFutureExt};
 use iced::subscription::{self, Subscription};
 
+use crate::element::Element;
 use crate::integration::iced::shared_rules::SharedRules;
 use crate::integration::iced::{CssEvent, IdAndClasses};
 use crate::parser::{parse_file, parse_file_sync, Event};
 
 pub struct CSS {
-  rules: SharedRules,
+  pub(crate) rules: SharedRules,
   receiver: Cell<Option<mpsc::UnboundedReceiver<CssEvent>>>,
 }
 
@@ -50,17 +51,5 @@ impl CSS {
         (Some(event), receiver)
       }
     })
-  }
-
-  pub fn button<'a, Message, Renderer>(
-    &self,
-    content: impl Into<iced::Element<'a, Message, Renderer>>,
-    def: IdAndClasses,
-  ) -> iced::widget::Button<'a, Message, Renderer>
-  where
-    Renderer: iced_native::renderer::Renderer<Theme = SharedRules>,
-  {
-    let button = iced::widget::Button::new(content);
-    button.style(def)
   }
 }

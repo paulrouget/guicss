@@ -106,12 +106,12 @@ pub struct ComputedProperties {
   pub max_width: Option<f32>,
   pub max_height: Option<f32>,
   pub direction: Direction,
+  pub flex_basis: Option<f32>,
+  pub flex_grow: f32,
   // "flex-direction"
   // "flex-wrap"
   // "flex-flow"
-  // "flex-grow"
   // "flex-shrink"
-  // "flex-basis"
   // "align-content"
   // "justify-content"
   // "align-self"
@@ -140,9 +140,8 @@ impl ComputedProperties {
     use lightningcss::properties::flex::FlexDirection;
     use lightningcss::properties::margin_padding::{Margin, Padding};
     use lightningcss::properties::size::{MaxSize, Size};
-    use lightningcss::values::length::Length;
-    use lightningcss::values::length::LengthPercentageOrAuto::LengthPercentage;
     use lightningcss::values::length::LengthValue::Px;
+    use lightningcss::values::length::{Length, LengthPercentageOrAuto};
     use lightningcss::values::percentage::DimensionPercentage::Dimension;
     use lightningcss::values::size::Size2D;
     use Property as P;
@@ -156,30 +155,33 @@ impl ComputedProperties {
       P::MaxHeight(MaxSize::LengthPercentage(Dimension(Px(v)))) => self.max_height = Some(*v),
       P::FlexDirection(FlexDirection::Row, _) => self.direction = Direction::Horizontal,
       P::FlexDirection(FlexDirection::Column, _) => self.direction = Direction::Vertical,
-      P::PaddingTop(LengthPercentage(Dimension(Px(v)))) => self.padding.top = *v,
-      P::PaddingBottom(LengthPercentage(Dimension(Px(v)))) => self.padding.bottom = *v,
-      P::PaddingRight(LengthPercentage(Dimension(Px(v)))) => self.padding.right = *v,
-      P::PaddingLeft(LengthPercentage(Dimension(Px(v)))) => self.padding.left = *v,
+      P::FlexGrow(v, _) => self.flex_grow = *v,
+      P::FlexBasis(LengthPercentageOrAuto::Auto, _) => self.flex_basis = None,
+      P::FlexBasis(LengthPercentageOrAuto::LengthPercentage(Dimension(Px(v))), _) => self.flex_basis = Some(*v),
+      P::PaddingTop(LengthPercentageOrAuto::LengthPercentage(Dimension(Px(v)))) => self.padding.top = *v,
+      P::PaddingBottom(LengthPercentageOrAuto::LengthPercentage(Dimension(Px(v)))) => self.padding.bottom = *v,
+      P::PaddingRight(LengthPercentageOrAuto::LengthPercentage(Dimension(Px(v)))) => self.padding.right = *v,
+      P::PaddingLeft(LengthPercentageOrAuto::LengthPercentage(Dimension(Px(v)))) => self.padding.left = *v,
       P::Padding(Padding {
-        top: LengthPercentage(Dimension(Px(t))),
-        bottom: LengthPercentage(Dimension(Px(b))),
-        right: LengthPercentage(Dimension(Px(r))),
-        left: LengthPercentage(Dimension(Px(l))),
+        top: LengthPercentageOrAuto::LengthPercentage(Dimension(Px(t))),
+        bottom: LengthPercentageOrAuto::LengthPercentage(Dimension(Px(b))),
+        right: LengthPercentageOrAuto::LengthPercentage(Dimension(Px(r))),
+        left: LengthPercentageOrAuto::LengthPercentage(Dimension(Px(l))),
       }) => {
         self.padding.top = *t;
         self.padding.bottom = *b;
         self.padding.left = *l;
         self.padding.right = *r;
       },
-      P::MarginTop(LengthPercentage(Dimension(Px(v)))) => self.margin.top = *v,
-      P::MarginBottom(LengthPercentage(Dimension(Px(v)))) => self.margin.bottom = *v,
-      P::MarginRight(LengthPercentage(Dimension(Px(v)))) => self.margin.right = *v,
-      P::MarginLeft(LengthPercentage(Dimension(Px(v)))) => self.margin.left = *v,
+      P::MarginTop(LengthPercentageOrAuto::LengthPercentage(Dimension(Px(v)))) => self.margin.top = *v,
+      P::MarginBottom(LengthPercentageOrAuto::LengthPercentage(Dimension(Px(v)))) => self.margin.bottom = *v,
+      P::MarginRight(LengthPercentageOrAuto::LengthPercentage(Dimension(Px(v)))) => self.margin.right = *v,
+      P::MarginLeft(LengthPercentageOrAuto::LengthPercentage(Dimension(Px(v)))) => self.margin.left = *v,
       P::Margin(Margin {
-        top: LengthPercentage(Dimension(Px(t))),
-        bottom: LengthPercentage(Dimension(Px(b))),
-        right: LengthPercentage(Dimension(Px(r))),
-        left: LengthPercentage(Dimension(Px(l))),
+        top: LengthPercentageOrAuto::LengthPercentage(Dimension(Px(t))),
+        bottom: LengthPercentageOrAuto::LengthPercentage(Dimension(Px(b))),
+        right: LengthPercentageOrAuto::LengthPercentage(Dimension(Px(r))),
+        left: LengthPercentageOrAuto::LengthPercentage(Dimension(Px(l))),
       }) => {
         self.margin.top = *t;
         self.margin.bottom = *b;

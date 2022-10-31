@@ -21,7 +21,7 @@ impl SharedRules {
     *self.0.write() = rules;
   }
 
-  fn compute(&self, elt: &Element<'_>) -> ComputedProperties {
+  pub(crate) fn compute(&self, elt: &Element<'_>) -> ComputedProperties {
     self.0.read().compute(elt)
   }
 }
@@ -37,44 +37,6 @@ impl application::StyleSheet for SharedRules {
 
   fn appearance(&self, _: Self::Style) -> application::Appearance {
     let elt = Element::root();
-    self.compute(&elt).into()
-  }
-}
-
-impl button::StyleSheet for SharedRules {
-  type Style = IdAndClasses;
-
-  fn active(&self, def: Self::Style) -> button::Appearance {
-    let mut elt = Element::named("button");
-    elt.set_id_and_classes(&def);
-    self.compute(&elt).into()
-  }
-
-  fn hovered(&self, def: Self::Style) -> button::Appearance {
-    let mut elt = Element::named("button").pseudo_class(PseudoClass::Hover);
-    elt.set_id_and_classes(&def);
-    self.compute(&elt).into()
-  }
-
-  fn pressed(&self, def: Self::Style) -> button::Appearance {
-    let mut elt = Element::named("button").pseudo_class(PseudoClass::Active);
-    elt.set_id_and_classes(&def);
-    self.compute(&elt).into()
-  }
-
-  fn disabled(&self, def: Self::Style) -> button::Appearance {
-    let mut elt = Element::named("button").pseudo_class(PseudoClass::Disabled);
-    elt.set_id_and_classes(&def);
-    self.compute(&elt).into()
-  }
-}
-
-impl text::StyleSheet for SharedRules {
-  type Style = IdAndClasses;
-
-  fn appearance(&self, def: Self::Style) -> text::Appearance {
-    let mut elt = Element::named("text");
-    elt.set_id_and_classes(&def);
     self.compute(&elt).into()
   }
 }

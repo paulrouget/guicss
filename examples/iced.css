@@ -25,6 +25,10 @@
   }
 }
 
+button {
+  padding: 7px;
+}
+
 .foo {
   border-radius: 15px;
 }

@@ -49,10 +49,12 @@ impl IdAndClasses {
 }
 
 impl<'i> Element<'i> {
-  pub(crate) fn set_id_and_classes(&mut self, def: &IdAndClasses) {
-    self.id = def.id;
+  pub(crate) fn def(name: &'i str, def: &IdAndClasses) -> Element<'i> {
+    let mut elt = Element::named(name);
+    elt.id = def.id;
     def.classes.into_iter().flatten().for_each(|c| {
-      self.classes.insert(c);
+      elt.classes.insert(c);
     });
+    elt
   }
 }
