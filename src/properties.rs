@@ -161,8 +161,8 @@ impl ComputedProperties {
     match p {
       P::FontSize(FontSize::Length(Dimension(Px(v)))) => self.font_size = Some(*v),
 
-      P::TextAlign(TextAlign::Start) | P::TextAlign(TextAlign::Left) => self.text_align = Align::Start,
-      P::TextAlign(TextAlign::End) | P::TextAlign(TextAlign::Right) => self.text_align = Align::End,
+      P::TextAlign(TextAlign::Start | TextAlign::Left) => self.text_align = Align::Start,
+      P::TextAlign(TextAlign::End | TextAlign::Right) => self.text_align = Align::End,
       P::TextAlign(TextAlign::Center) => self.text_align = Align::Center,
       P::TextAlign(TextAlign::Justify) => self.text_align = Align::Justify,
 
