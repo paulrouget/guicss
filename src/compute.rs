@@ -66,14 +66,13 @@ impl<'i> PreComputedRules<'i> {
       })
       .unzip();
 
-    // Flatten the declarations and sort them with important declarations are at the
-    // end.
+    // Flatten the declarations and sort them with important declarations at the end.
     let (normal_matching, important_matching) = matching;
     let normal_matching = normal_matching.into_iter().flatten();
     let important_matching = important_matching.into_iter().flatten();
     let matching = normal_matching.chain(important_matching);
 
-    // Declarations are not sort from least specific to more specific, with
+    // Declarations are now sorted from least specific to more specific, with
     // importants at the end.
 
     let mut variables = HashMap::new();
